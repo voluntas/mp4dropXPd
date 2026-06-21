@@ -1,0 +1,3 @@
+[submodule "extern/zed"]
+	path = extern/zed
+	url = https://github.com/zed-industries/zed.git

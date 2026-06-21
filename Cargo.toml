@@ -1,0 +1,41 @@
+[package]
+name = "mp4dropxpd"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.95"
+license = "Apache-2.0"
+description = "macOS MP4 to MP4 re-encoder (oggdropXPd-style drag and drop)"
+readme = "README.md"
+publish = false
+
+[dependencies]
+# GPUI (Zed の UI フレームワーク)。git submodule extern/zed を path 依存で参照する
+gpui = { path = "extern/zed/crates/gpui", default-features = false }
+# GPUI のプラットフォーム層 (macOS)。フォント読み込みに font-kit を有効化する
+gpui_platform = { path = "extern/zed/crates/gpui_platform", features = ["font-kit"] }
+# GPUI 上で tokio 非同期ランタイムを動かすためのブリッジ
+gpui_tokio = { path = "extern/zed/crates/gpui_tokio" }
+
+# AV1 映像デコーダ (dav1d バインディング)
+shiguredo_dav1d = "2026.1"
+# MP4 コンテナの demux / mux
+shiguredo_mp4 = "2026.3"
+# Opus 音声エンコード
+shiguredo_opus = "2026.1"
+# AV1 映像エンコード (SVT-AV1 バインディング)
+shiguredo_svt_av1 = "2026.1"
+
+# 非同期ランタイム。マルチスレッド実行・マクロ・同期チャネルを使用する
+tokio = { version = "1.52", features = ["rt-multi-thread", "macros", "sync"] }
+# 構造化ログ
+tracing = "0.1"
+# ログのフィルタリング (env-filter) と標準フォーマット出力 (fmt)
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# macOS AudioToolbox バインディング (AAC デコード/エンコード、Opus デコード)
+# canary 版は Decoder コールバックの重複パケット返却バグ修正を含むため必須。
+# pre-release なので Cargo の仕様上 `=` で完全固定する必要がある
+shiguredo_audio_toolbox = "=2026.2.0-canary.0"
+# macOS VideoToolbox バインディング (H.264 / H.265 デコード/エンコード)
+shiguredo_video_toolbox = "2026.1"
