@@ -91,6 +91,7 @@ pub fn transcode(
     input: &Path,
     output: &Path,
     recipe: EncodeRecipe,
+    overwrite: bool,
     progress: &JobProgress,
 ) -> Result<()> {
     let input_data = std::fs::read(input)?;
@@ -197,6 +198,13 @@ pub fn transcode(
     // 両方とも出力不能なら早期 return (空入力または両方失敗)
     if video_for_mux.is_none() && audio_for_mux.is_none() {
         return Ok(());
+    }
+    // 上書き不可設定かつ出力ファイルが既存の場合は Err を返す
+    if !overwrite && output.exists() {
+        return Err(Error::Io(std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            format!("output file already exists: {}", output.display()),
+        )));
     }
     write_mp4(output, video_for_mux, audio_for_mux, video_timescale)
 }

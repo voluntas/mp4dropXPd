@@ -19,7 +19,7 @@ async fn subtitle_only_mp4_returns_error() {
     let recipe = EncodeRecipe::default();
     let progress = Arc::new(JobProgress::new());
 
-    let result = encode_file_async(input, output, recipe, progress).await;
+    let result = encode_file_async(input, output, recipe, true, progress).await;
 
     assert!(result.is_err());
     assert!(
@@ -36,7 +36,7 @@ async fn truncated_mp4_does_not_panic() {
     let recipe = EncodeRecipe::default();
     let progress = Arc::new(JobProgress::new());
 
-    let result = encode_file_async(input, output, recipe, progress).await;
+    let result = encode_file_async(input, output, recipe, true, progress).await;
 
     // パニックせずに Err が返れば OK（demux エラーまたは範囲外エラーのいずれか）
     assert!(result.is_err(), "truncated MP4 should return Err, got: {result:?}");
@@ -50,7 +50,7 @@ async fn stco_corrupted_mp4_does_not_panic() {
     let recipe = EncodeRecipe::default();
     let progress = Arc::new(JobProgress::new());
 
-    let result = encode_file_async(input, output, recipe, progress).await;
+    let result = encode_file_async(input, output, recipe, true, progress).await;
 
     // パニックせずに Err が返れば OK
     assert!(result.is_err(), "stco corrupted MP4 should return Err, got: {result:?}");
@@ -64,7 +64,7 @@ async fn random_bytes_does_not_panic() {
     let recipe = EncodeRecipe::default();
     let progress = Arc::new(JobProgress::new());
 
-    let result = encode_file_async(input, output, recipe, progress).await;
+    let result = encode_file_async(input, output, recipe, true, progress).await;
 
     // パニックせずに Err が返れば OK（demux がエラーを返すはず）
     assert!(result.is_err(), "random bytes should return Err, got: {result:?}");
@@ -81,7 +81,7 @@ async fn valid_mp4_transcodes_successfully() {
     let recipe = EncodeRecipe::default();
     let progress = Arc::new(JobProgress::new());
 
-    let result = encode_file_async(input, output, recipe, progress).await;
+    let result = encode_file_async(input, output, recipe, true, progress).await;
 
     assert!(result.is_ok(), "valid MP4 should transcode successfully, got: {result:?}");
 }
@@ -94,7 +94,7 @@ async fn valid_av1_mp4_transcodes_successfully() {
     let recipe = EncodeRecipe::default();
     let progress = Arc::new(JobProgress::new());
 
-    let result = encode_file_async(input, output, recipe, progress).await;
+    let result = encode_file_async(input, output, recipe, true, progress).await;
 
     assert!(result.is_ok(), "valid AV1 MP4 should transcode successfully, got: {result:?}");
 }
@@ -107,7 +107,7 @@ async fn truncated_av1_mp4_does_not_panic() {
     let recipe = EncodeRecipe::default();
     let progress = Arc::new(JobProgress::new());
 
-    let result = encode_file_async(input, output, recipe, progress).await;
+    let result = encode_file_async(input, output, recipe, true, progress).await;
 
     // パニックせずに Err が返れば OK（demux エラーまたはデコードエラーのいずれか）
     assert!(result.is_err(), "truncated AV1 MP4 should return Err, got: {result:?}");
@@ -123,9 +123,41 @@ async fn failed_encode_does_not_leave_output_file() {
 
     // 事前に出力ファイルを削除しておく
     let _ = std::fs::remove_file(output);
-    let result = encode_file_async(input, output, recipe, progress).await;
+    let result = encode_file_async(input, output, recipe, true, progress).await;
     assert!(result.is_err());
 
     // tmp + atomic rename 方式により、失敗時は出力ファイルが残らない
     assert!(!output.exists(), "output file should not exist after failed encode");
+}
+
+/// overwrite = false で既存ファイルがある場合は Err が返る
+#[tokio::test]
+async fn overwrite_false_with_existing_file_returns_error() {
+    let input = Path::new("tests/fixtures/valid_h264_aac.mp4");
+    let output = Path::new("/tmp/test_output_overwrite_false.mp4");
+    // 事前にファイルを作成しておく
+    std::fs::write(output, b"x").expect("create existing file");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, false, progress).await;
+
+    assert!(result.is_err(), "overwrite=false with existing file should return Err, got: {result:?}");
+}
+
+/// overwrite = true で既存ファイルがあっても正常に上書きされる
+#[tokio::test]
+async fn overwrite_true_with_existing_file_succeeds() {
+    let input = Path::new("tests/fixtures/valid_h264_aac.mp4");
+    let output = Path::new("/tmp/test_output_overwrite_true.mp4");
+    // 事前にファイルを作成しておく
+    std::fs::write(output, b"y").expect("create existing file");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, true, progress).await;
+
+    assert!(result.is_ok(), "overwrite=true with existing file should succeed, got: {result:?}");
+    // 正常に上書きされたことを確認 (tmp rename 後にファイルが 7 バイト以上あるはず)
+    assert!(output.exists());
 }

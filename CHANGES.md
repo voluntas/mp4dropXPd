@@ -18,6 +18,8 @@
   - @voluntas
 - [FIX] UI 文字列を全て日本語化する (技術用語例外を除く)
   - @voluntas
+- [FIX] AppSettings::overwrite 設定をエンコード経路に配線する
+  - @voluntas
 
 ### misc
 

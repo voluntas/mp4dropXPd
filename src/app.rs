@@ -167,7 +167,7 @@ impl DropWindow {
             .state
             .dropped_paths
             .iter()
-            .map(|input| EncodeJob::new(input.clone(), default_output_path(input, recipe), recipe))
+            .map(|input| EncodeJob::new(input.clone(), default_output_path(input, recipe), recipe, self.state.settings.overwrite))
             .collect();
 
         // 各ジョブの進捗を追跡する JobProgress を生成

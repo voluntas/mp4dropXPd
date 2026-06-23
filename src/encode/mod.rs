@@ -65,13 +65,14 @@ pub async fn encode_file_async(
     input: &Path,
     output: &Path,
     recipe: EncodeRecipe,
+    overwrite: bool,
     progress: Arc<JobProgress>,
 ) -> Result<()> {
     ensure_mp4_input(input)?;
     ensure_mp4_output(output)?;
     let input = input.to_path_buf();
     let output = output.to_path_buf();
-    tokio::task::spawn_blocking(move || encode_mp4_to_mp4_sync(&input, &output, recipe, &progress))
+    tokio::task::spawn_blocking(move || encode_mp4_to_mp4_sync(&input, &output, recipe, overwrite, &progress))
         .await
         .expect("encode join failed")
 }
@@ -83,7 +84,7 @@ pub async fn run_jobs_async(
     let mut set = JoinSet::new();
     for (job, progress) in jobs.into_iter().zip(progresses) {
         set.spawn(async move {
-            let result = encode_file_async(&job.input, &job.output, job.recipe, progress).await;
+            let result = encode_file_async(&job.input, &job.output, job.recipe, job.overwrite, progress).await;
             (job, result)
         });
     }
@@ -92,7 +93,7 @@ pub async fn run_jobs_async(
         match joined {
             Ok(pair) => out.push(pair),
             Err(e) => out.push((
-                EncodeJob::new(PathBuf::new(), PathBuf::new(), EncodeRecipe::default()),
+                EncodeJob::new(PathBuf::new(), PathBuf::new(), EncodeRecipe::default(), false),
                 Err(Error::Message(format!("encode task failed: {e}"))),
             )),
         }
@@ -119,7 +120,8 @@ fn encode_mp4_to_mp4_sync(
     input: &Path,
     output: &Path,
     recipe: EncodeRecipe,
+    overwrite: bool,
     progress: &JobProgress,
 ) -> Result<()> {
-    transcode::transcode(input, output, recipe, progress)
+    transcode::transcode(input, output, recipe, overwrite, progress)
 }
