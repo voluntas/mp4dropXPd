@@ -61,6 +61,7 @@ struct EncodedAudioSample {
     data: Vec<u8>,
     timestamp: u64,
     duration: u32,
+    composition_time_offset: Option<i64>,
 }
 
 /// 出力トラック種別 (mux 時の時系列マージ用)
@@ -171,9 +172,9 @@ pub fn transcode(
     };
     let recipe = recipe.with_input_bitrates(video_input_bitrate_kbps, audio_input_bitrate_kbps);
 
-    // 進捗計算の基準として映像フレーム数をセットする
-    // 音声は映像に比べて処理時間が短いため、映像フレームを基準とする
-    progress.set_total(video_samples.len() as u64);
+    // 進捗計算の基準として映像フレーム数 + 音声フレーム数 (概算) をセットする
+    // 音声なしの場合は video_samples.len() だけ、映像なしの場合は audio_samples.len() で代替
+    progress.set_total(video_samples.len().max(audio_samples.len()) as u64);
 
     // 映像と音声をエンコード
     // 音声の timescale は出力サンプルレートを使う (timestamp がサンプル単位のため) なので
@@ -269,6 +270,7 @@ fn encode_tracks(
             audio_timescale,
             recipe.audio,
             recipe.audio_bitrate_kbps,
+            progress,
         ) {
             Ok(output) => Ok(Some(output)),
             Err(e) => {
@@ -796,10 +798,11 @@ fn encode_audio(
     timescale: Option<NonZeroU32>,
     audio_codec: AudioCodec,
     bitrate_kbps: u32,
+    progress: &JobProgress,
 ) -> Result<AudioOutput> {
     match audio_codec {
-        AudioCodec::Aac => encode_audio_aac(samples, timescale, bitrate_kbps),
-        AudioCodec::Opus => encode_audio_opus(samples, timescale, bitrate_kbps),
+        AudioCodec::Aac => encode_audio_aac(samples, timescale, bitrate_kbps, progress),
+        AudioCodec::Opus => encode_audio_opus(samples, timescale, bitrate_kbps, progress),
     }
 }
 
@@ -860,6 +863,7 @@ fn encode_audio_aac(
     samples: &[RawSample],
     _timescale: Option<NonZeroU32>,
     bitrate_kbps: u32,
+    progress: &JobProgress,
 ) -> Result<AudioOutput> {
     let (pcm, sample_rate, channels) = decode_audio_to_pcm(samples)?;
 
@@ -891,8 +895,10 @@ fn encode_audio_aac(
             data: frame.data,
             timestamp: cumulative_samples,
             duration,
+            composition_time_offset: None,
         });
         cumulative_samples += duration as u64;
+        progress.add_processed(1);
     }
 
     let sample_entry = build_mp4a_sample_entry(sample_rate, channels);
@@ -909,6 +915,7 @@ fn encode_audio_opus(
     samples: &[RawSample],
     _timescale: Option<NonZeroU32>,
     bitrate_kbps: u32,
+    progress: &JobProgress,
 ) -> Result<AudioOutput> {
     let (pcm, sample_rate, channels) = decode_audio_to_pcm(samples)?;
 
@@ -952,8 +959,10 @@ fn encode_audio_opus(
             data: enc_data,
             timestamp: cumulative_samples,
             duration,
+            composition_time_offset: None,
         });
         cumulative_samples += duration as u64;
+        progress.add_processed(1);
         i += needed;
     }
 
@@ -969,6 +978,7 @@ fn encode_audio_opus(
             data: enc_data,
             timestamp: cumulative_samples,
             duration,
+            composition_time_offset: None,
         });
     }
 
@@ -1222,6 +1232,7 @@ fn write_mp4(
                     data: s.data.clone(),
                     timestamp: s.timestamp,
                     duration: s.duration,
+                    composition_time_offset: s.composition_time_offset,
                 }),
             ));
         }
@@ -1278,7 +1289,7 @@ fn write_mp4(
                     keyframe: false,
                     timescale: ts,
                     duration: s.duration,
-                    composition_time_offset: None,
+                    composition_time_offset: s.composition_time_offset,
                     data_offset: position,
                     data_size,
                 };

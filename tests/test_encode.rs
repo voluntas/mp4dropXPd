@@ -161,3 +161,16 @@ async fn overwrite_true_with_existing_file_succeeds() {
     // 正常に上書きされたことを確認 (tmp rename 後にファイルが 7 バイト以上あるはず)
     assert!(output.exists());
 }
+
+/// 音声のみ MP4 (映像なし) のトランスコードが成功することを確認する smoke test
+#[tokio::test]
+async fn audio_only_mp4_transcodes_successfully() {
+    let input = Path::new("tests/fixtures/audio_only_aac.mp4");
+    let output = Path::new("/tmp/test_output_audio_only.mp4");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, true, progress).await;
+
+    assert!(result.is_ok(), "audio-only MP4 should transcode successfully, got: {result:?}");
+}

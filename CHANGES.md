@@ -22,6 +22,10 @@
   - @voluntas
 - [FIX] エンコード中の quit で detach タスクが走り続ける問題を修正する (Task を保持し abort 可能に)
   - @voluntas
+- [FIX] 音声のみ MP4 で進捗バーが 0% 固定になる問題を修正する
+  - @voluntas
+- [FIX] 入力音声サンプルの composition_time_offset が mux 時に破棄される問題を修正する
+  - @voluntas
 
 ### misc
 
