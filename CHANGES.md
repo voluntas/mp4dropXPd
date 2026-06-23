@@ -35,6 +35,8 @@
   - @voluntas
 - [UPDATE] EncodeRecipe のメソッドリファクタリング (リネーム + codec_tag + DEFAULT_VIDEO_TIMESCALE)
   - @voluntas
+- [UPDATE] sample_entry に仕様参照を追加し README に UI 役割分担を明記する
+  - @voluntas
 
 ### 追加
 

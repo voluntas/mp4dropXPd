@@ -9,6 +9,10 @@ use shiguredo_mp4::descriptors::{
 use shiguredo_mp4::{FixedPointNumber, Uint};
 
 /// H.264 (avc1) の SampleEntry を構築する
+/// H.264 (avc1) の SampleEntry を構築する
+///
+/// 仕様参照: ISO/IEC 14496-15 § 8.3.2.1.2 (AVC/H.264 SampleEntry)
+/// 仕様変更時は本関数の実装を追従させる必要がある
 pub fn build_avc1_sample_entry(sps: &[u8], pps: &[u8], width: u16, height: u16) -> SampleEntry {
     let avc_profile_indication = sps.first().copied().unwrap_or(66);
     let profile_compatibility = sps.get(1).copied().unwrap_or(0);
@@ -36,6 +40,10 @@ pub fn build_avc1_sample_entry(sps: &[u8], pps: &[u8], width: u16, height: u16) 
 }
 
 /// H.265 (hev1) の SampleEntry を構築する
+/// HEVC/H.265 (hev1) の SampleEntry を構築する
+///
+/// 仕様参照: ISO/IEC 14496-15 § 8.3.2.1.3 (HEVC/H.265 SampleEntry)
+/// 仕様変更時は本関数の実装を追従させる必要がある
 pub fn build_hev1_sample_entry(
     vps: &[u8],
     sps: &[u8],
@@ -88,6 +96,10 @@ pub fn build_hev1_sample_entry(
 }
 
 /// AV1 (av01) の SampleEntry を構築する
+/// AV1 (av01) の SampleEntry を構築する
+///
+/// 仕様参照: ISO/IEC 14496-15 § 8.3.2.1.4 (AV1 SampleEntry)
+/// 仕様変更時は本関数の実装を追従させる必要がある
 pub fn build_av01_sample_entry(extra_data: &[u8], width: u16, height: u16) -> SampleEntry {
     // SVT-AV1 の extra_data は OBU シーケンスヘッダーそのもの
     // av1C box の config_obus にそのまま格納する
@@ -113,6 +125,10 @@ pub fn build_av01_sample_entry(extra_data: &[u8], width: u16, height: u16) -> Sa
 }
 
 /// AAC (mp4a) の SampleEntry を構築する
+/// AAC (mp4a) の SampleEntry を構築する
+///
+/// 仕様参照: ISO/IEC 14496-12 § 12.2.2.2 + ISO/IEC 14496-3 (AAC)
+/// 仕様変更時は本関数の実装を追従させる必要がある
 pub fn build_mp4a_sample_entry(sample_rate: u32, channels: u8) -> SampleEntry {
     let asc = build_aac_audio_specific_config(sample_rate, channels);
 
@@ -143,6 +159,10 @@ pub fn build_mp4a_sample_entry(sample_rate: u32, channels: u8) -> SampleEntry {
 }
 
 /// Opus (Opus) の SampleEntry を構築する
+/// Opus の SampleEntry を構築する
+///
+/// 仕様参照: RFC 7845 § 5 (OpusSampleEntry)
+/// 仕様変更時は本関数の実装を追従させる必要がある
 pub fn build_opus_sample_entry(sample_rate: u32, channels: u8, pre_skip: u16) -> SampleEntry {
     SampleEntry::Opus(OpusBox {
         audio: audio_fields(sample_rate, channels),
@@ -181,6 +201,10 @@ fn audio_fields(sample_rate: u32, channels: u8) -> AudioSampleEntryFields {
 /// ISO/IEC 14496-3 AudioSpecificConfig (AAC-LC, no SBR) を構築する
 ///
 /// `samplingFrequencyIndex` が 0xf (escape) の場合は 24-bit のサンプリングレートを埋め込む
+/// AAC AudioSpecificConfig を構築する
+///
+/// 仕様参照: ISO/IEC 14496-3 § 1.6.2.1 (AudioSpecificConfig)
+/// 仕様変更時は本関数の実装を追従させる必要がある
 fn build_aac_audio_specific_config(sample_rate: u32, channels: u8) -> Vec<u8> {
     const AUDIO_OBJECT_TYPE_AAC_LC: u8 = 2;
     let freq_index = sampling_frequency_index(sample_rate);

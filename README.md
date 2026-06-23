@@ -42,6 +42,14 @@ cargo build
 cargo run
 ```
 
+## UI の役割分担
+
+- **メインウィンドウ**: `.mp4` ファイルをドロップする。ドラッグ＆ドロップのみ。ドロップ時は Auto-encode on drop が ON なら自動エンコード開始。
+- **コンテキストメニュー** (右クリック): クイックトグルとアクション。コーデック選択（Audio/Video）、Auto-encode on drop / Overwrite output の ON/OFF、Encode/Clear/Exit の即時実行。設定変更は即座に反映される。
+- **Options ウィンドウ** (Options…): 詳細設定。ビットレート（Audio/Video）の数値指定や、より整理されたレイアウトでのコーデック選択。Close で破棄、Save で確定（メインウィンドウのコンテキストメニューにも即時反映）。
+
+Auto-encode on drop と Overwrite output は両方のウィンドウから変更可能で、どちらから変更しても即座に反映される。
+
 ## 出力ファイル名
 
 ドロップ時は入力ファイルと同じディレクトリに `<stem>.<video>_<audio>.mp4` で出力される。
