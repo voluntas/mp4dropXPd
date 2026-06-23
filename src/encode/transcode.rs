@@ -1205,21 +1205,44 @@ fn write_mp4(
     audio: Option<AudioOutput>,
     video_timescale: Option<NonZeroU32>,
 ) -> Result<()> {
+    struct MuxWriter {
+        file: std::fs::File,
+        position: u64,
+    }
+
+    impl MuxWriter {
+        /// サンプルデータを書き込み、`data_offset` と `data_size` を返す
+        fn write_data(&mut self, data: &[u8]) -> Result<(u64, usize)> {
+            self.file.write_all(data)?;
+            let offset = self.position;
+            let size = data.len();
+            self.position += size as u64;
+            Ok((offset, size))
+        }
+
+        fn flush(&mut self) -> Result<()> {
+            self.file.flush().map_err(Error::from)
+        }
+    }
+
     let mut muxer = Mp4FileMuxer::new().map_err(|e| Error::Message(format!("muxer init: {e}")))?;
     let initial_bytes = muxer.initial_boxes_bytes().to_vec();
 
-    // 既存ファイルを truncate せず、tmp に書き出してから atomic rename する
     let temp = TempFile::new(output)?;
-    let mut file = std::fs::OpenOptions::new()
+    let file = std::fs::OpenOptions::new()
         .write(true)
         .open(temp.path())?;
-    file.write_all(&initial_bytes)?;
+    let mut writer = MuxWriter {
+        file,
+        position: 0,
+    };
+    writer.file.write_all(&initial_bytes)?;
+    writer.position = initial_bytes.len() as u64;
 
     // 音声の timescale は出力サンプルレートを使う (timestamp がサンプル単位のため)
     let audio_timescale = audio.as_ref().and_then(|a| NonZeroU32::new(a.sample_rate));
 
     // 時系列順にマージするためのイベントリスト
-    // f64 の精度限界を避けるため、整数キー (timestamp / timescale) の比較でソートする
     struct MergeEvent {
         timestamp: u64,
         timescale: NonZeroU32,
@@ -1292,13 +1315,11 @@ fn write_mp4(
 
     let mut video_entry_sent = false;
     let mut audio_entry_sent = false;
-    let mut position = initial_bytes.len() as u64;
 
     for event in events {
         match event.kind {
             OutputKind::Video(s) => {
-                file.write_all(&s.data)?;
-                let data_size = s.data.len();
+                let (data_offset, data_size) = writer.write_data(&s.data)?;
                 let ts = video_ts.expect("video timescale");
                 let sample = MuxSample {
                     track_kind: TrackKind::Video,
@@ -1312,17 +1333,15 @@ fn write_mp4(
                     timescale: ts,
                     duration: s.duration,
                     composition_time_offset: s.composition_time_offset,
-                    data_offset: position,
+                    data_offset,
                     data_size,
                 };
                 muxer
                     .append_sample(&sample)
                     .map_err(|e| Error::Message(format!("mux append video: {e}")))?;
-                position += data_size as u64;
             }
             OutputKind::Audio(s) => {
-                file.write_all(&s.data)?;
-                let data_size = s.data.len();
+                let (data_offset, data_size) = writer.write_data(&s.data)?;
                 let ts = audio_ts.expect("audio timescale");
                 let sample = MuxSample {
                     track_kind: TrackKind::Audio,
@@ -1336,13 +1355,12 @@ fn write_mp4(
                     timescale: ts,
                     duration: s.duration,
                     composition_time_offset: s.composition_time_offset,
-                    data_offset: position,
+                    data_offset,
                     data_size,
                 };
                 muxer
                     .append_sample(&sample)
                     .map_err(|e| Error::Message(format!("mux append audio: {e}")))?;
-                position += data_size as u64;
             }
         }
     }
@@ -1352,10 +1370,10 @@ fn write_mp4(
         .finalize()
         .map_err(|e| Error::Message(format!("mux finalize: {e}")))?;
     for (offset, bytes) in finalized.offset_and_bytes_pairs() {
-        file.seek(SeekFrom::Start(offset))?;
-        file.write_all(bytes)?;
+        writer.file.seek(SeekFrom::Start(offset))?;
+        writer.file.write_all(bytes)?;
     }
-    file.flush()?;
+    writer.flush()?;
 
     // atomic rename で出力先に置換。失敗時は Drop で tmp 削除
     std::fs::rename(temp.path(), output)?;

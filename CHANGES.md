@@ -32,6 +32,8 @@
   - @voluntas
 - [FIX] 進捗カウントをエンコード実完了ベースに修正する
   - @voluntas
+- [UPDATE] MuxWriter 構造体を導入し data_offset の手動管理をカプセル化する
+  - @voluntas
 - [UPDATE] エラーハンドリングと可観測性を改善する (tracing ログ追加 + デフォルトレベル設定 + panic 時処理改善)
   - @voluntas
 - [UPDATE] async runtime と progress control を改善する (worker_threads 動的決定 + Notify ベース進捗待機)
