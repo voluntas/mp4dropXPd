@@ -3,7 +3,7 @@
 - Priority: High
 - Category: add
 - Created: 2026-06-22
-- Completed:
+- Completed: 2026-06-23
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
 
@@ -137,6 +137,10 @@ jobs:
 
 実装時の確認手順:
 
+- **追加で行った作業**:
+  - `src/lib.rs` を新規作成し `pub mod codec; pub mod error; pub mod encode; pub mod input;` を宣言した。`pbt/tests/prop_codec.rs` が `mp4dropxpd::codec::EncodeRecipe` をインポートするために必要。
+  - `Cargo.toml` に `[[test]]` セクションを追加し、`pbt/tests/prop_codec.rs` をテストターゲットとして登録した。標準の `tests/` ディレクトリと異なり `pbt/tests/` は Cargo が自動認識しないため。
+  - `tests/.gitkeep` を追加した (空ディレクトリを git 管理するため)。
 - **本 issue の位置づけ**: 0001-0006, 0009 すべてが「0007 と 0009 の双方が closed になるまで着手不可」と依存している最上位 issue。本 issue が完了すると 0001-0006 のテスト追加着手が解禁される。
 - **0009 との関係**: 本 issue は `Cargo.toml` 編集のみで `CHANGES.md` 追記を伴う。0009 (`bug-changes-md-missing`) で `CHANGES.md` が新規作成されてから、本 issue の `## 追加` 追記を行う。**0007 → 0009 の順** でコミットする。
 - **0001-0006 との関係**: 本 issue 完了後、0001 (`src/encode/transcode.rs:114-116`)、0002 (`transcode.rs:515-540`)、0003 (`transcode.rs:306-330`)、0004 (`transcode.rs:986-1109`)、0005 (`transcode.rs:174-205`)、0006 (`transcode.rs:103-106`) はそれぞれ「`tests/test_encode.rs` への smoke test 追加」を完了条件に含めており、0007 で整備された基盤にテストを書き込む。**0007 → 0009 → 0006 → 0001 → 0002 → 0003 → 0004 → 0005** の順でコミット可能。
