@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-23
 - Completed:
-- Model: opencode/deepseek-v4-pro
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
