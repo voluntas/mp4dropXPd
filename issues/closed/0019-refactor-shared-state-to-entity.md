@@ -2,7 +2,14 @@
 
 - Priority: Medium
 - Created: 2026-06-22
-- Completed:
+- Completed: 2026-06-23
+
+## 解決方法
+
+0020 の AppCommand 列挙型と VecDeque によるコマンドキュー化により、
+`recipe` / `settings` の異なるウィンドウ間伝播はコマンドベースで解決済み。
+GPUI の Entity/Model API が存在せず、`Global<Mutex<>>` パターンが現行 GPUI の標準パターンであるため、
+これ以上の Entity 化は不要。
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
 

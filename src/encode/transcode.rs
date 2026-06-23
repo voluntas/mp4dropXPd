@@ -471,59 +471,13 @@ fn encode_video_h264(
 ) -> Result<VideoOutput> {
     let first_entry = first_sample_entry(samples)?;
     let (width, height) = resolution_of(first_entry)?;
-
-    let ts = timescale.unwrap_or(DEFAULT_VIDEO_TIMESCALE);
-    let avg_duration = average_duration(samples) as u32;
-    let fps_denominator = if avg_duration == 0 { 1 } else { avg_duration };
-
-    let mut encoder = VtEncoder::new(shiguredo_video_toolbox::EncoderConfig {
-        width: width as u32,
-        height: height as u32,
-        codec: VtCodecConfig::H264(shiguredo_video_toolbox::H264EncoderConfig {
-            profile: H264Profile::Main,
-            entropy_mode: H264EntropyMode::Cabac,
-        }),
-        pixel_format: VtPixelFormat::I420,
-        average_bitrate: Some(bitrate_kbps as u64 * 1000),
-        fps_numerator: ts.get(),
-        fps_denominator,
-        prioritize_encoding_speed_over_quality: false,
-        real_time: false,
-        maximize_power_efficiency: false,
-        allow_frame_reordering: false,
-        allow_temporal_compression: true,
-        max_key_frame_interval: None,
-        max_key_frame_interval_duration: None,
-        // フレーム遅延を 1 に制限して、エンコード完了後にフレームが届かない
-        // (ドロップ/無限待ち) 状態を防ぐ
-        max_frame_delay_count: NonZeroU32::new(1),
-    })?;
-
-    // デコード → エンコード
-    let mut raw_iter = samples.iter();
-    decode_video_frames(samples, width, height, |y, u, v| {
-        let raw = raw_iter.next();
-        encoder
-            .encode(
-                &VtFrameData::I420 { y, u, v },
-                &shiguredo_video_toolbox::EncodeOptions {
-                    force_key_frame: raw.is_some_and(|r| r.keyframe),
-                },
-            )
-            .map_err(|e| Error::Message(format!("video encode error: {e}")))?;
-        Ok(())
-    })?;
-
-    encoder
-        .finish()
-        .map_err(|e| Error::Message(format!("video encode finish error: {e}")))?;
-
-    // finish 後に全フレームを取り出す
-    let encoded_frames = drain_vt_encoder(&mut encoder, samples.len())?;
-    // 進捗は drain 完了ベースでカウントする (エンコード投入時点ではなく実完了ベース)
+    let codec = VtCodecConfig::H264(shiguredo_video_toolbox::H264EncoderConfig {
+        profile: H264Profile::Main,
+        entropy_mode: H264EntropyMode::Cabac,
+    });
+    let encoded_frames = encode_video_vt(samples, width, height, timescale, bitrate_kbps, codec)?;
     progress.add_processed(encoded_frames.len() as u64);
 
-    // 最初のキーフレームから SPS/PPS を取得
     let (enc_sps, enc_pps) = encoded_frames
         .iter()
         .find(|f| f.keyframe)
@@ -535,14 +489,9 @@ fn encode_video_h264(
         .ok_or_else(|| {
             Error::Message("H.264 エンコード結果から SPS/PPS を取得できません".into())
         })?;
-
     let encoded = build_video_samples(&encoded_frames, samples);
     let sample_entry = build_avc1_sample_entry(&enc_sps, &enc_pps, width, height);
-
-    Ok(VideoOutput {
-        samples: encoded,
-        sample_entry,
-    })
+    Ok(VideoOutput { samples: encoded, sample_entry })
 }
 
 #[cfg(target_os = "macos")]
@@ -554,58 +503,13 @@ fn encode_video_h265(
 ) -> Result<VideoOutput> {
     let first_entry = first_sample_entry(samples)?;
     let (width, height) = resolution_of(first_entry)?;
-
-    let ts = timescale.unwrap_or(DEFAULT_VIDEO_TIMESCALE);
-    let avg_duration = average_duration(samples) as u32;
-    let fps_denominator = if avg_duration == 0 { 1 } else { avg_duration };
-
-    let mut encoder = VtEncoder::new(shiguredo_video_toolbox::EncoderConfig {
-        width: width as u32,
-        height: height as u32,
-        codec: VtCodecConfig::Hevc(HevcEncoderConfig {
-            profile: HevcProfile::Main,
-            allow_open_gop: true,
-        }),
-        pixel_format: VtPixelFormat::I420,
-        average_bitrate: Some(bitrate_kbps as u64 * 1000),
-        fps_numerator: ts.get(),
-        fps_denominator,
-        prioritize_encoding_speed_over_quality: false,
-        real_time: false,
-        maximize_power_efficiency: false,
-        allow_frame_reordering: false,
-        allow_temporal_compression: true,
-        max_key_frame_interval: None,
-        max_key_frame_interval_duration: None,
-        // フレーム遅延を 1 に制限して、エンコード完了後にフレームが届かない
-        // (ドロップ/無限待ち) 状態を防ぐ
-        max_frame_delay_count: NonZeroU32::new(1),
-    })?;
-
-    // デコード → エンコード
-    let mut raw_iter = samples.iter();
-    decode_video_frames(samples, width, height, |y, u, v| {
-        let raw = raw_iter.next();
-        encoder
-            .encode(
-                &VtFrameData::I420 { y, u, v },
-                &shiguredo_video_toolbox::EncodeOptions {
-                    force_key_frame: raw.is_some_and(|r| r.keyframe),
-                },
-            )
-            .map_err(|e| Error::Message(format!("video encode error: {e}")))?;
-        Ok(())
-    })?;
-
-    encoder
-        .finish()
-        .map_err(|e| Error::Message(format!("video encode finish error: {e}")))?;
-
-    let encoded_frames = drain_vt_encoder(&mut encoder, samples.len())?;
-    // 進捗は drain 完了ベースでカウントする (エンコード投入時点ではなく実完了ベース)
+    let codec = VtCodecConfig::Hevc(HevcEncoderConfig {
+        profile: HevcProfile::Main,
+        allow_open_gop: true,
+    });
+    let encoded_frames = encode_video_vt(samples, width, height, timescale, bitrate_kbps, codec)?;
     progress.add_processed(encoded_frames.len() as u64);
 
-    // H.265 の場合、EncodedFrame から VPS/SPS/PPS を取得
     let (enc_vps, enc_sps, enc_pps) = encoded_frames
         .iter()
         .find(|f| f.keyframe)
@@ -618,14 +522,64 @@ fn encode_video_h265(
         .ok_or_else(|| {
             Error::Message("H.265 エンコード結果から VPS/SPS/PPS を取得できません".into())
         })?;
-
     let encoded = build_video_samples(&encoded_frames, samples);
     let sample_entry = build_hev1_sample_entry(&enc_vps, &enc_sps, &enc_pps, width, height);
+    Ok(VideoOutput { samples: encoded, sample_entry })
+}
 
-    Ok(VideoOutput {
-        samples: encoded,
-        sample_entry,
-    })
+/// H.264 / H.265 の VideoToolbox エンコード共通処理
+#[cfg(target_os = "macos")]
+fn encode_video_vt(
+    samples: &[RawSample],
+    width: u16,
+    height: u16,
+    timescale: Option<NonZeroU32>,
+    bitrate_kbps: u32,
+    codec: VtCodecConfig,
+) -> Result<Vec<shiguredo_video_toolbox::EncodedFrame>> {
+    let ts = timescale.unwrap_or(DEFAULT_VIDEO_TIMESCALE);
+    let avg_duration = average_duration(samples) as u32;
+    let fps_denominator = if avg_duration == 0 { 1 } else { avg_duration };
+
+    let mut encoder = VtEncoder::new(shiguredo_video_toolbox::EncoderConfig {
+        width: width as u32,
+        height: height as u32,
+        codec,
+        pixel_format: VtPixelFormat::I420,
+        average_bitrate: Some(bitrate_kbps as u64 * 1000),
+        fps_numerator: ts.get(),
+        fps_denominator,
+        prioritize_encoding_speed_over_quality: false,
+        real_time: false,
+        maximize_power_efficiency: false,
+        allow_frame_reordering: false,
+        allow_temporal_compression: true,
+        max_key_frame_interval: None,
+        max_key_frame_interval_duration: None,
+        // フレーム遅延を 1 に制限して、エンコード完了後にフレームが届かない
+        // (ドロップ/無限待ち) 状態を防ぐ
+        max_frame_delay_count: NonZeroU32::new(1),
+    })?;
+
+    let mut raw_iter = samples.iter();
+    decode_video_frames(samples, width, height, |y, u, v| {
+        let raw = raw_iter.next();
+        encoder
+            .encode(
+                &VtFrameData::I420 { y, u, v },
+                &shiguredo_video_toolbox::EncodeOptions {
+                    force_key_frame: raw.is_some_and(|r| r.keyframe),
+                },
+            )
+            .map_err(|e| Error::Message(format!("video encode error: {e}")))?;
+        Ok(())
+    })?;
+
+    encoder
+        .finish()
+        .map_err(|e| Error::Message(format!("video encode finish error: {e}")))?;
+
+    drain_vt_encoder(&mut encoder, samples.len())
 }
 
 #[cfg(target_os = "macos")]
