@@ -37,6 +37,8 @@
   - @voluntas
 - [UPDATE] sample_entry に仕様参照を追加し README に UI 役割分担を明記する
   - @voluntas
+- [UPDATE] window_remove ヘルパーを削除し MenuWindow に多重起動防止を追加する
+  - @voluntas
 
 ### 追加
 

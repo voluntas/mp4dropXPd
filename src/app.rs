@@ -23,7 +23,6 @@ struct SharedState {
     pending_encode: bool,
     pending_clear: bool,
     pending_exit: bool,
-    pending_close_menu: bool,
     latest_recipe: Option<EncodeRecipe>,
     latest_settings: Option<AppSettings>,
 }
@@ -122,10 +121,6 @@ impl DropWindow {
             }
             cx.quit();
             return;
-        }
-        if s.pending_close_menu {
-            s.pending_close_menu = false;
-            self.menu_open = false;
         }
         drop(s);
     }
@@ -258,6 +253,10 @@ impl DropWindow {
         if self.state.encoding {
             return;
         }
+        // 既にメニューが開いていれば多重起動を防止する
+        if self.menu_open {
+            return;
+        }
 
         let recipe = self.state.recipe;
         let settings = self.state.settings.clone();
@@ -369,8 +368,7 @@ impl Render for DropWindow {
                         return;
                     }
                     if view.menu_open {
-                        let mut s = shared(cx);
-                        s.pending_close_menu = true;
+                        view.menu_open = false;
                     }
                 }),
             )
@@ -541,16 +539,9 @@ impl Focusable for MenuWindow {
 }
 
 impl Render for MenuWindow {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        // メインウィンドウから「閉じて」リクエストが来たら閉じる
-        {
-            let mut s = shared(cx);
-            if s.pending_close_menu {
-                s.pending_close_menu = false;
-                window.remove_window();
-                return div().into_any_element();
-            }
-        }
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // メニュー項目クリック時は listener クロージャで直接 _w.remove_window() を呼ぶため
+        // pending_close_menu は不要 (0022 で削除)
 
         div()
             .flex()
@@ -573,7 +564,7 @@ impl Render for MenuWindow {
                     .cursor_pointer()
                     .on_click(cx.listener(|view, _ev, _w, cx| {
                         view.request(cx, |s| s.pending_open_options = true);
-                        window_remove(cx);
+                        _w.remove_window();
                     }))
                     .child("オプション…"),
             )
@@ -693,7 +684,7 @@ impl Render for MenuWindow {
                         .cursor_pointer()
                         .on_click(cx.listener(|view, _ev, _w, cx| {
                             view.request(cx, |s| s.pending_encode = true);
-                            window_remove(cx);
+                            _w.remove_window();
                         }));
                 } else {
                     base = base.opacity(0.5);
@@ -711,7 +702,7 @@ impl Render for MenuWindow {
                     .cursor_pointer()
                     .on_click(cx.listener(|view, _ev, _w, cx| {
                         view.request(cx, |s| s.pending_clear = true);
-                        window_remove(cx);
+                        _w.remove_window();
                     }))
                     .child("クリア"),
             )
@@ -727,25 +718,12 @@ impl Render for MenuWindow {
                     .cursor_pointer()
                     .on_click(cx.listener(|view, _ev, _w, cx| {
                         view.request(cx, |s| s.pending_exit = true);
-                        window_remove(cx);
+                        _w.remove_window();
                     }))
                     .child("終了"),
             )
             .into_any_element()
     }
-}
-
-/// remove_window を安全に呼ぶヘルパー
-/// cx は Context<MenuWindow>
-fn window_remove(cx: &mut Context<MenuWindow>) {
-    // on_click の listener は (&mut MenuWindow, &ClickEvent, &mut Window, &mut Context<MenuWindow>)
-    // だが cx.listener のクロージャは (&mut MenuWindow, &E, &mut Window, &mut Context<MenuWindow>)
-    // なので、実際には _w が Window
-    // しかし上記の on_click では _w を無視している
-    // 代わりに cx から window にアクセスする方法がないので、
-    // グローバルフラグで閉じる
-    let mut s = shared(cx);
-    s.pending_close_menu = true;
 }
 
 fn menu_sep() -> gpui::Div {
