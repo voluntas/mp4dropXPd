@@ -177,18 +177,55 @@ pub fn transcode(
     // 映像と音声をエンコード
     // 音声の timescale は出力サンプルレートを使う (timestamp がサンプル単位のため) なので
     // ここでは入力の audio_timescale を渡すが encode_audio 側では使わない
-    let (video_output, audio_output) = encode_tracks(
+    let encode_output = encode_tracks(
         &video_samples,
         &audio_samples,
         video_timescale,
         audio_timescale,
         recipe,
         progress,
-    )?;
+    );
+    // 成功したトラックだけを取り出す。所有権を move する。
+    let video_for_mux = match encode_output.video {
+        Ok(Some(v)) => Some(v),
+        _ => None,
+    };
+    let audio_for_mux = match encode_output.audio {
+        Ok(Some(a)) => Some(a),
+        _ => None,
+    };
+    // 両方とも出力不能なら早期 return (空入力または両方失敗)
+    if video_for_mux.is_none() && audio_for_mux.is_none() {
+        return Ok(());
+    }
+    write_mp4(output, video_for_mux, audio_for_mux, video_timescale)
+}
 
-    // mux して出力ファイルに書き込み
-    // 音声の timescale は AudioOutput.sample_rate から取り出すので渡さない
-    write_mp4(output, video_output, audio_output, video_timescale)
+#[cfg(target_os = "macos")]
+#[cfg(target_os = "macos")]
+type TrackEncodeResult<T> = std::result::Result<Option<T>, TrackError>;
+
+#[cfg(target_os = "macos")]
+#[derive(Debug)]
+enum TrackError {
+    Video(String),
+    Audio(String),
+}
+
+#[cfg(target_os = "macos")]
+impl std::fmt::Display for TrackError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Video(s) => write!(f, "video: {s}"),
+            Self::Audio(s) => write!(f, "audio: {s}"),
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+struct EncodeTracksOutput {
+    video: TrackEncodeResult<VideoOutput>,
+    audio: TrackEncodeResult<AudioOutput>,
 }
 
 #[cfg(target_os = "macos")]
@@ -199,31 +236,49 @@ fn encode_tracks(
     audio_timescale: Option<NonZeroU32>,
     recipe: EncodeRecipe,
     progress: &JobProgress,
-) -> Result<(Option<VideoOutput>, Option<AudioOutput>)> {
-    let video_output = if !video_samples.is_empty() {
-        Some(encode_video(
+) -> EncodeTracksOutput {
+    let video = if !video_samples.is_empty() {
+        match encode_video(
             video_samples,
             video_timescale,
             recipe.video,
             recipe.video_bitrate_kbps,
             progress,
-        )?)
+        ) {
+            Ok(output) => Ok(Some(output)),
+            Err(e) => {
+                tracing::warn!("video encode failed: {e}");
+                Err(TrackError::Video(e.to_string()))
+            }
+        }
     } else {
-        None
+        Ok(None)
     };
 
-    let audio_output = if !audio_samples.is_empty() {
-        Some(encode_audio(
+    let audio = if !audio_samples.is_empty() {
+        match encode_audio(
             audio_samples,
             audio_timescale,
             recipe.audio,
             recipe.audio_bitrate_kbps,
-        )?)
+        ) {
+            Ok(output) => Ok(Some(output)),
+            Err(e) => {
+                tracing::warn!("audio encode failed: {e}");
+                Err(TrackError::Audio(e.to_string()))
+            }
+        }
     } else {
-        None
+        Ok(None)
     };
 
-    Ok((video_output, audio_output))
+    EncodeTracksOutput { video, audio }
+}
+
+#[cfg(not(target_os = "macos"))]
+struct EncodeTracksOutput {
+    video: Result<Option<()>, ()>,
+    audio: Result<Option<()>, ()>,
 }
 
 #[cfg(not(target_os = "macos"))]
@@ -234,10 +289,11 @@ fn encode_tracks(
     _audio_timescale: Option<NonZeroU32>,
     _recipe: EncodeRecipe,
     _progress: &JobProgress,
-) -> Result<(Option<VideoOutput>, Option<AudioOutput>)> {
-    Err(Error::Message(
-        "mp4dropXPd は macOS 以外ではエンコードできません".into(),
-    ))
+) -> EncodeTracksOutput {
+    EncodeTracksOutput {
+        video: Ok(None),
+        audio: Ok(None),
+    }
 }
 
 // ===== 映像エンコード =====

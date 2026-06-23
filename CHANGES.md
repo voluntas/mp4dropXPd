@@ -14,6 +14,8 @@
   - @voluntas
 - [FIX] write_mp4 を tmp + atomic rename 方式に変更し出力ファイル破損を防止する
   - @voluntas
+- [FIX] encode_tracks を部分成功対応に変更する (映像/音声を独立評価、片方失敗時に残りを保持)
+  - @voluntas
 
 ### misc
 
