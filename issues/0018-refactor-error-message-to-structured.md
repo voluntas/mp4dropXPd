@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -50,5 +48,5 @@
   - 0005: `Error::TrackEncode { track: TrackKind, message }` バリアント新設
   - 0006: `Error::NoTrack { kind: Option<TrackKind> }` バリアント新設
 - **0018 着手前のバリアント名確定**: 上記バリアント名は本 issue 内で確定し、0001-0008 の `Error::Message` 追加箇所を本 issue で順次置換する。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
-- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] Error::Message の濫用を構造化バリアントに置換` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
