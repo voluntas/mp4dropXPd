@@ -8,14 +8,10 @@ pub fn default_output_path(input: &Path, recipe: EncodeRecipe) -> PathBuf {
         .map(|s| s.to_os_string())
         .unwrap_or_default();
     let parent = input.parent().unwrap_or(Path::new("."));
-    let tag = format!(
-        "{}_{}",
-        recipe.video.label().replace('.', ""),
-        recipe.audio.label().to_ascii_lowercase()
-    );
+    let tag = recipe.codec_tag();
     parent.join(format!(
         "{}.{}.mp4",
         stem.to_string_lossy(),
-        tag.replace(' ', "")
+        tag
     ))
 }

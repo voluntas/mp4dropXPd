@@ -53,7 +53,7 @@ impl EncodeRecipe {
     ///
     /// UI 側でユーザーが明示的にビットレートを指定した場合はそれを優先し、
     /// デフォルト値 (0 = 未指定) のときだけ入力の実ビットレートを使う。
-    pub fn with_input_bitrates(
+    pub fn resolve_input_bitrates(
         self,
         video_input_kbps: Option<u32>,
         audio_input_kbps: Option<u32>,
@@ -71,5 +71,15 @@ impl EncodeRecipe {
             },
             ..self
         }
+    }
+
+    /// コーデックタグ文字列を返す (出力ファイル名の codec 部分に使用)
+    pub fn codec_tag(&self) -> String {
+        format!(
+            "{}_{}",
+            self.video.label().replace('.', ""),
+            self.audio.label().to_ascii_lowercase()
+        )
+        .replace(' ', "")
     }
 }

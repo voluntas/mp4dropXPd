@@ -33,6 +33,8 @@
 
 - [UPDATE] AppSettings のデッドフィールドと DropState::status/idle_hint を削除する
   - @voluntas
+- [UPDATE] EncodeRecipe のメソッドリファクタリング (リネーム + codec_tag + DEFAULT_VIDEO_TIMESCALE)
+  - @voluntas
 
 ### 追加
 

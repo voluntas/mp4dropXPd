@@ -88,6 +88,9 @@ struct AudioOutput {
     sample_rate: u32,
 }
 
+/// デフォルトの映像タイムスケール (30 fps)
+const DEFAULT_VIDEO_TIMESCALE: NonZeroU32 = NonZeroU32::new(30).expect("30 != 0");
+
 pub fn transcode(
     input: &Path,
     output: &Path,
@@ -170,7 +173,7 @@ pub fn transcode(
     } else {
         None
     };
-    let recipe = recipe.with_input_bitrates(video_input_bitrate_kbps, audio_input_bitrate_kbps);
+    let recipe = recipe.resolve_input_bitrates(video_input_bitrate_kbps, audio_input_bitrate_kbps);
 
     // 進捗計算の基準として映像フレーム数 + 音声フレーム数 (概算) をセットする
     // 音声なしの場合は video_samples.len() だけ、映像なしの場合は audio_samples.len() で代替
@@ -470,7 +473,7 @@ fn encode_video_h264(
     let first_entry = first_sample_entry(samples)?;
     let (width, height) = resolution_of(first_entry)?;
 
-    let ts = timescale.unwrap_or_else(|| NonZeroU32::new(30).expect("30 != 0"));
+    let ts = timescale.unwrap_or(DEFAULT_VIDEO_TIMESCALE);
     let avg_duration = average_duration(samples) as u32;
     let fps_denominator = if avg_duration == 0 { 1 } else { avg_duration };
 
@@ -552,7 +555,7 @@ fn encode_video_h265(
     let first_entry = first_sample_entry(samples)?;
     let (width, height) = resolution_of(first_entry)?;
 
-    let ts = timescale.unwrap_or_else(|| NonZeroU32::new(30).expect("30 != 0"));
+    let ts = timescale.unwrap_or(DEFAULT_VIDEO_TIMESCALE);
     let avg_duration = average_duration(samples) as u32;
     let fps_denominator = if avg_duration == 0 { 1 } else { avg_duration };
 
@@ -680,7 +683,7 @@ fn encode_video_av1(
     let first_entry = first_sample_entry(samples)?;
     let (width, height) = resolution_of(first_entry)?;
 
-    let ts = timescale.unwrap_or_else(|| NonZeroU32::new(30).expect("30 != 0"));
+    let ts = timescale.unwrap_or(DEFAULT_VIDEO_TIMESCALE);
     let avg_duration = average_duration(samples) as u32;
     let fps_denominator = if avg_duration == 0 { 1 } else { avg_duration };
 
