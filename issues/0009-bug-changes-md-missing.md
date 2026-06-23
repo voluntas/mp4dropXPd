@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -44,7 +42,7 @@ AGENTS.md 40-42 行「変更履歴を記載するときは `shiguredo-changelog`
 - `CHANGES.md` がリポジトリに存在し、`# 変更履歴` タイトル + `## develop` セクション + `- [ADD] ...` 初回エントリ + `- @voluntas` 担当者行が記載されている
 - `.markdownlint.jsonc` の 4 ルール (MD004 / MD013 / MD024 / MD036) を満たす
 - 0001-0008 が `[FIX] ...` 種別のエントリを `### 不具合修正` サブセクションに追記できる構造になっている
-- `cargo clippy --workspace --all-targets -- -D warnings` (`prek.toml:28`) を通過する (CHANGES.md 編集のみなので影響なしだが確認)
+- `cargo clippy --all-targets -- -D warnings` (`prek.toml:28`) を通過する (CHANGES.md 編集のみなので影響なしだが確認)
 - `prek` の 5 フックがローカルで 0 警告で完了する
 
 ## 解決方法
@@ -83,5 +81,5 @@ AGENTS.md 40-42 行「変更履歴を記載するときは `shiguredo-changelog`
 - **0001-0008 の re-polish 必要性**: 0001-0008 のうち「`## 不具合修正`」表現と本 issue で確立した `### 不具合修正` サブセクションの整合を確認するため、0009 完了後に 0001-0008 を一括 re-polish する (もしくは各 issue 着手時に個別確認)。本 issue では「`## 不具合修正` 等に本修正が追記されている」 (`0001-0008` の表現) を「`### 不具合修正` サブセクションに `[FIX] ...` 種別のエントリを追記」と読み替える。
 - **prek への markdownlint 追加**: 別 issue `0009-add-prek-markdownlint` に切り出す (本 issue のスコープ外)。`CHANGES.md` の行長・リスト形式・見出し整合性は手動確認とし、prek での自動強制は別 issue で扱う。
 - **0032 / 0046 との関係**: 本 issue では `tracing` 関連の記載なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認 (`prek.toml:28` の hook がコミット時に同じチェックを行う)。CHANGES.md 編集のみなので影響なし。
-- **CHANGES.md 追記**: 本 issue 自身は CHANGES.md を新規作成するため、追記は初回エントリ 1 件のみ。`## 不具合修正` セクションは空のまま (次の issue 着手時に追記される)。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
