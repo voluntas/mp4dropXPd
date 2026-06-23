@@ -512,7 +512,6 @@ fn encode_video_h264(
                 },
             )
             .map_err(|e| Error::Message(format!("video encode error: {e}")))?;
-        progress.add_processed(1);
         Ok(())
     })?;
 
@@ -522,6 +521,8 @@ fn encode_video_h264(
 
     // finish 後に全フレームを取り出す
     let encoded_frames = drain_vt_encoder(&mut encoder, samples.len())?;
+    // 進捗は drain 完了ベースでカウントする (エンコード投入時点ではなく実完了ベース)
+    progress.add_processed(encoded_frames.len() as u64);
 
     // 最初のキーフレームから SPS/PPS を取得
     let (enc_sps, enc_pps) = encoded_frames
@@ -594,7 +595,6 @@ fn encode_video_h265(
                 },
             )
             .map_err(|e| Error::Message(format!("video encode error: {e}")))?;
-        progress.add_processed(1);
         Ok(())
     })?;
 
@@ -603,6 +603,8 @@ fn encode_video_h265(
         .map_err(|e| Error::Message(format!("video encode finish error: {e}")))?;
 
     let encoded_frames = drain_vt_encoder(&mut encoder, samples.len())?;
+    // 進捗は drain 完了ベースでカウントする (エンコード投入時点ではなく実完了ベース)
+    progress.add_processed(encoded_frames.len() as u64);
 
     // H.265 の場合、EncodedFrame から VPS/SPS/PPS を取得
     let (enc_vps, enc_sps, enc_pps) = encoded_frames
@@ -720,7 +722,6 @@ fn encode_video_av1(
                 },
             )
             .map_err(|e| Error::Message(format!("svt_av1 encode error: {e}")))?;
-        progress.add_processed(1);
 
         // エンコード結果を取り出す
         while let Some(enc_frame) = encoder.next_frame() {
@@ -761,6 +762,8 @@ fn encode_video_av1(
 
     // PTS 順にソートする (SVT-AV1 はフレーム並び替えを行う場合がある)
     encoded.sort_by_key(|s| s.timestamp);
+    // 進捗はエンコード実完了ベースでカウントする
+    progress.add_processed(encoded.len() as u64);
 
     // AV1 の SampleEntry は extra_data (OBU sequence header) を使う
     let sample_entry = build_av01_sample_entry(&extra_data, width, height);
