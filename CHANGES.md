@@ -24,6 +24,8 @@
   - @voluntas
 - [FIX] 音声のみ MP4 で進捗バーが 0% 固定になる問題を修正する
   - @voluntas
+- [FIX] 英語コメントを全て日本語に書き換える (AGENTS.md 準拠)
+  - @voluntas
 - [FIX] 入力音声サンプルの composition_time_offset が mux 時に破棄される問題を修正する
   - @voluntas
 

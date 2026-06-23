@@ -1,5 +1,5 @@
-# Configuration file for `prek`, a git hook framework written in Rust.
-# See https://prek.j178.dev for more information.
+# prek 設定ファイル (Rust 製の git hook フレームワーク)
+# 詳細は https://prek.j178.dev を参照
 #:schema https://www.schemastore.org/prek.json
 
 [[repos]]

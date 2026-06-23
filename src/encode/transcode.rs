@@ -1114,7 +1114,7 @@ fn average_bitrate_kbps(samples: &[RawSample], timescale: u32) -> Option<u32> {
     if total_duration_units == 0 {
         return None;
     }
-    // bps = total_bytes * 8 * timescale / total_duration_units
+        // ビットレート (bps) = 合計バイト数 × 8 × タイムスケール / 合計期間単位
     let bps = total_bytes.checked_mul(8)?.checked_mul(timescale as u64)? / total_duration_units;
     Some((bps / 1000) as u32)
 }
@@ -1301,7 +1301,7 @@ fn write_mp4(
         }
     }
 
-    // finalize
+    // muxer をファイナライズする
     let finalized = muxer
         .finalize()
         .map_err(|e| Error::Message(format!("mux finalize: {e}")))?;

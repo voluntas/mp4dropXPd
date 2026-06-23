@@ -26,9 +26,9 @@ pub fn build_avc1_sample_entry(sps: &[u8], pps: &[u8], width: u16, height: u16) 
             length_size_minus_one: Uint::new(3),
             sps_list: vec![sps.to_vec()],
             pps_list: vec![pps.to_vec()],
-            chroma_format: needs_ext.then(|| Uint::new(1)), // 4:2:0
-            bit_depth_luma_minus8: needs_ext.then(|| Uint::new(0)), // 8-bit
-            bit_depth_chroma_minus8: needs_ext.then(|| Uint::new(0)), // 8-bit
+            chroma_format: needs_ext.then(|| Uint::new(1)), // クロマフォーマット 4:2:0
+            bit_depth_luma_minus8: needs_ext.then(|| Uint::new(0)), // 8 ビット
+            bit_depth_chroma_minus8: needs_ext.then(|| Uint::new(0)), // 8 ビット
             sps_ext_list: Vec::new(),
         },
         unknown_boxes: Vec::new(),
@@ -43,7 +43,7 @@ pub fn build_hev1_sample_entry(
     width: u16,
     height: u16,
 ) -> SampleEntry {
-    // VPS=32, SPS=33, PPS=34 (HEVC NAL unit types)
+    // VPS=32、SPS=33、PPS=34 (HEVC NAL ユニットタイプ)
     let nalu_arrays = vec![
         HvccNalUintArray {
             array_completeness: Uint::new(0),
@@ -67,13 +67,13 @@ pub fn build_hev1_sample_entry(
         hvcc_box: HvccBox {
             general_profile_space: Uint::new(0),
             general_tier_flag: Uint::new(0),
-            general_profile_idc: Uint::new(1), // Main profile
+            general_profile_idc: Uint::new(1),     // Main プロファイル
             general_profile_compatibility_flags: 0x60000000,
             general_constraint_indicator_flags: Uint::new(0),
             general_level_idc: 0,
             min_spatial_segmentation_idc: Uint::new(0),
             parallelism_type: Uint::new(0),
-            chroma_format_idc: Uint::new(1), // 4:2:0
+            chroma_format_idc: Uint::new(1), // クロマフォーマット 4:2:0
             bit_depth_luma_minus8: Uint::new(0),
             bit_depth_chroma_minus8: Uint::new(0),
             avg_frame_rate: 0,
@@ -102,7 +102,7 @@ pub fn build_av01_sample_entry(extra_data: &[u8], width: u16, height: u16) -> Sa
             high_bitdepth: Uint::new(0),
             twelve_bit: Uint::new(0),
             monochrome: Uint::new(0),
-            chroma_subsampling_x: Uint::new(1), // 4:2:0
+            chroma_subsampling_x: Uint::new(1), // クロマフォーマット 4:2:0
             chroma_subsampling_y: Uint::new(1),
             chroma_sample_position: Uint::new(0),
             initial_presentation_delay_minus_one: None,
