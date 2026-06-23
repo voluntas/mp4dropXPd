@@ -92,10 +92,13 @@ pub async fn run_jobs_async(
     while let Some(joined) = set.join_next().await {
         match joined {
             Ok(pair) => out.push(pair),
-            Err(e) => out.push((
-                EncodeJob::new(PathBuf::new(), PathBuf::new(), EncodeRecipe::default(), false),
-                Err(Error::Message(format!("encode task failed: {e}"))),
-            )),
+            Err(e) => {
+                tracing::error!(error = %e, "encode task panicked");
+                out.push((
+                    EncodeJob::new(PathBuf::new(), PathBuf::new(), EncodeRecipe::default(), false),
+                    Err(Error::Message(format!("encode task panicked: {e}"))),
+                ));
+            }
         }
     }
     out

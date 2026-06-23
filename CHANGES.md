@@ -32,6 +32,8 @@
   - @voluntas
 - [FIX] 進捗カウントをエンコード実完了ベースに修正する
   - @voluntas
+- [UPDATE] エラーハンドリングと可観測性を改善する (tracing ログ追加 + デフォルトレベル設定 + panic 時処理改善)
+  - @voluntas
 
 ### misc
 

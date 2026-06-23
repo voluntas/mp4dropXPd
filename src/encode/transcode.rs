@@ -99,6 +99,7 @@ pub fn transcode(
     progress: &JobProgress,
 ) -> Result<()> {
     let input_data = std::fs::read(input)?;
+    tracing::info!(file = %input.display(), size = input_data.len(), "encode started");
 
     let mut demuxer = Mp4FileDemuxer::new();
     demuxer.handle_input(Input {
@@ -155,7 +156,10 @@ pub fn transcode(
                 }
             }
             Ok(None) => break,
-            Err(e) => return Err(Error::Message(format!("demux error: {e}"))),
+            Err(e) => {
+                tracing::error!(error = %e, "demux error");
+                return Err(Error::Message(format!("demux error: {e}")));
+            }
         }
     }
 
@@ -210,7 +214,12 @@ pub fn transcode(
             format!("output file already exists: {}", output.display()),
         )));
     }
-    write_mp4(output, video_for_mux, audio_for_mux, video_timescale)
+    if let Err(e) = write_mp4(output, video_for_mux, audio_for_mux, video_timescale) {
+        tracing::error!(error = %e, "mux error");
+        return Err(e);
+    }
+    tracing::info!("encode finished");
+    Ok(())
 }
 
 #[cfg(target_os = "macos")]
