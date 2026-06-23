@@ -3,10 +3,9 @@
 - Priority: High
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
+
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -58,8 +57,8 @@ while let Ok(Some(frame)) = decoder
 - エラーなしで全サンプルを処理したとき、ドレインループで遅延フレームもすべて取得され、最終フレームまで mux に含まれる
 - 正常 AV1 MP4 の smoke test が `tests/test_encode.rs` に追加されている
 - 破損 AV1 OBU 列入力で `Err` が返ることを assert するテストが追加されている
-- `cargo clippy --workspace --all-targets -- -D warnings` を通過する
-- `CHANGES.md` (0009 で新規作成) の `### 不具合修正` に本修正を追記する (`shiguredo-changelog` 規約)
+- `cargo clippy --all-targets -- -D warnings` を通過する
+- `CHANGES.md` (0009 で新規作成) の `### 不具合修正` に `[FIX] AV1 (dav1d) デコードのエラー握り潰しと最終フレームドレイン漏れを修正する` を追記する (`shiguredo-changelog` 規約)
 - ドレインループ脱出時に `tracing::debug!` で英語ログ (取得フレーム数を含む) が出力される (AGENTS.md「ログメッセージは全て英語にすること」準拠)
 
 ## 解決方法
@@ -128,5 +127,5 @@ SampleEntry::Av01(_) => {
 - **dav1d 破損 OBU 後のデコーダ状態**: `Err` 即時 return により後続サンプル処理はスキップされる。`decoder` は `encode_video_av1` 関数のスコープを抜けて `Drop` される運用を前提とし、明示的なデコーダリセットは行わない。
 - **dav1d ドレインの無限ループリスク**: ドレイン用 `while let Some` は `Ok(None)` で正常終了する。`Ok(Some)` を返し続けるケースは 0002 の `drain_vt_encoder` タイムアウト機構に倣った別 issue で対応する。
 - **0018 との関係**: 本 issue で追加する `Error::Message` 1 箇所は 0018 の refactor 対象に含まれる。本 issue は 0018 の前段であり、並行着手はできない。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` を通過すること。
-- **CHANGES.md 追記**: `### 不具合修正` に「AV1 (dav1d) デコードのエラー握り潰しと最終フレームドレイン漏れを修正」を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
