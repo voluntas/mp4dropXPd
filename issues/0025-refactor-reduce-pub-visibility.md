@@ -3,10 +3,8 @@
 - Priority: Low
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -44,5 +42,5 @@
 - **0024 との関係**: 0024 (`AppSettings::recipe/output_dir` 削除) と並行可 (別フィールド)。
 - **0007 で整備される基盤**: `tests/test_app.rs` への getter/setter のテスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認 (`pub` 削減で外部参照の warning が出る可能性あり)。
-- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立) に `[REFACTOR] DropState / MenuWindow / OptionsWindow の pub フィールドを private 化 + getter/setter 追加` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
