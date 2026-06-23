@@ -71,6 +71,9 @@ async fn random_bytes_does_not_panic() {
 }
 
 /// 正常な MP4 (H.264 + AAC) のトランスコードが成功することを確認する smoke test
+///
+/// ローカル実測値 (MacBook Pro M4 Pro, 2026-06-23): 約 0.12 秒
+/// 30 秒の drain タイムアウトより十分短いため、タイムアウト誤検出の心配はない
 #[tokio::test]
 async fn valid_mp4_transcodes_successfully() {
     let input = Path::new("tests/fixtures/valid_h264_aac.mp4");

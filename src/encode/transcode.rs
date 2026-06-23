@@ -534,22 +534,41 @@ fn encode_video_h265(
 }
 
 #[cfg(target_os = "macos")]
+/// `drain_vt_encoder` が `Ok(None)` を連続して受け取ったまま
+/// 待機してよい最大の待ち時間
+const DRAIN_VT_ENCODER_STALL_TIMEOUT: std::time::Duration =
+    std::time::Duration::from_secs(30);
+
+#[cfg(target_os = "macos")]
 fn drain_vt_encoder(
     encoder: &mut VtEncoder,
     expected: usize,
 ) -> Result<Vec<shiguredo_video_toolbox::EncodedFrame>> {
-    // VideoToolbox のエンコードは非同期で、finish() 後にフレームが順次届く。
-    // 以前は empty_retries > 1000 (合計 100ms) で打ち切っていたが、
-    // エンコーダ内部の遅延が大きいとフレームを欠落させる原因になるため、
-    // 期待フレーム数に達するまで無制限に待つ。
     let mut encoded_frames: Vec<shiguredo_video_toolbox::EncodedFrame> = Vec::new();
+    let mut last_progress = std::time::Instant::now();
     while encoded_frames.len() < expected {
         match encoder.next_frame() {
             Ok(Some(frame)) => {
+                // フレームが届いた → ストール判定をリセット
+                last_progress = std::time::Instant::now();
                 encoded_frames.push(frame);
             }
             Ok(None) => {
-                // フレームがまだ届いていないだけなので短いスリープで待つ
+                // フレームがまだ届いていない。連続ストール判定。
+                let elapsed = last_progress.elapsed();
+                if elapsed >= DRAIN_VT_ENCODER_STALL_TIMEOUT {
+                    let received = encoded_frames.len();
+                    tracing::warn!(
+                        elapsed = ?elapsed,
+                        expected,
+                        received,
+                        "video encoder stalled"
+                    );
+                    return Err(Error::Message(format!(
+                        "video encoder stalled: elapsed {elapsed:?}, expected {expected} frames, received {received}"
+                    )));
+                }
+                // スリープで CPU を譲りつつポーリング間隔を確保
                 std::thread::sleep(std::time::Duration::from_micros(100));
             }
             Err(e) => {

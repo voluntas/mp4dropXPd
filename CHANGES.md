@@ -8,6 +8,8 @@
   - @voluntas
 - [FIX] 破損 MP4 入力時の data_offset + data_size 範囲外 panic を Result エラーに変換する
   - @voluntas
+- [FIX] drain_vt_encoder の永久 busy-wait を 30 秒タイムアウトに変換する
+  - @voluntas
 
 ### misc
 
