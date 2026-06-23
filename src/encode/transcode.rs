@@ -118,9 +118,23 @@ pub fn transcode(
     loop {
         match demuxer.next_sample() {
             Ok(Some(sample)) => {
-                let data = input_data
-                    [sample.data_offset as usize..sample.data_offset as usize + sample.data_size]
-                    .to_vec();
+                let end_u64 = sample
+                    .data_offset
+                    .checked_add(sample.data_size as u64)
+                    .ok_or_else(|| Error::Message("サンプルデータ範囲がオーバーフローしました".into()))?;
+                let start = usize::try_from(sample.data_offset)
+                    .map_err(|_| Error::Message("サンプルデータ開始位置が usize を超えました".into()))?;
+                let end = usize::try_from(end_u64)
+                    .map_err(|_| Error::Message("サンプルデータ終了位置が usize を超えました".into()))?;
+                if end > input_data.len() {
+                    // 破損入力の兆候として warn ログを出力する
+                    tracing::warn!("sample data out of range: {start}..{end}, file size {}", input_data.len());
+                    return Err(Error::Message(format!(
+                        "サンプルデータが範囲外です: {start}..{end}, ファイルサイズ {}",
+                        input_data.len()
+                    )));
+                }
+                let data = input_data[start..end].to_vec();
                 let raw = RawSample {
                     data,
                     timestamp: sample.timestamp,

@@ -6,6 +6,8 @@
 
 - [FIX] 映像/音声トラックを含まない MP4 入力時の破損ファイル生成を防止する
   - @voluntas
+- [FIX] 破損 MP4 入力時の data_offset + data_size 範囲外 panic を Result エラーに変換する
+  - @voluntas
 
 ### misc
 

@@ -1,6 +1,8 @@
 //! `encode` モジュールの単体テスト
 //!
 //! 戦略: 破損・異常入力を与えて `Err` で安全に停止することを検証する
+//!
+//! 検証対象: transcode.rs のサンプル範囲検証、トラック検証、demux エラー処理
 
 use std::path::Path;
 use std::sync::Arc;
@@ -24,4 +26,59 @@ async fn subtitle_only_mp4_returns_error() {
         matches!(result, Err(Error::Message(ref msg)) if msg == "no video/audio track in input"),
         "expected no video/audio track error, got: {result:?}"
     );
+}
+
+/// 途中で切断された MP4 を投入してもパニックせず Err を返す
+#[tokio::test]
+async fn truncated_mp4_does_not_panic() {
+    let input = Path::new("tests/fixtures/truncated_h264_aac.mp4");
+    let output = Path::new("/tmp/test_output_truncated.mp4");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, progress).await;
+
+    // パニックせずに Err が返れば OK（demux エラーまたは範囲外エラーのいずれか）
+    assert!(result.is_err(), "truncated MP4 should return Err, got: {result:?}");
+}
+
+/// stco chunk_offset を改竄した MP4 を投入してもパニックせず Err を返す
+#[tokio::test]
+async fn stco_corrupted_mp4_does_not_panic() {
+    let input = Path::new("tests/fixtures/stco_corrupted_h264_aac.mp4");
+    let output = Path::new("/tmp/test_output_stco_corrupted.mp4");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, progress).await;
+
+    // パニックせずに Err が返れば OK
+    assert!(result.is_err(), "stco corrupted MP4 should return Err, got: {result:?}");
+}
+
+/// ランダムバイト列を MP4 として投入してもパニックせず Err を返す
+#[tokio::test]
+async fn random_bytes_does_not_panic() {
+    let input = Path::new("tests/fixtures/random_bytes.mp4");
+    let output = Path::new("/tmp/test_output_random.mp4");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, progress).await;
+
+    // パニックせずに Err が返れば OK（demux がエラーを返すはず）
+    assert!(result.is_err(), "random bytes should return Err, got: {result:?}");
+}
+
+/// 正常な MP4 (H.264 + AAC) のトランスコードが成功することを確認する smoke test
+#[tokio::test]
+async fn valid_mp4_transcodes_successfully() {
+    let input = Path::new("tests/fixtures/valid_h264_aac.mp4");
+    let output = Path::new("/tmp/test_output_valid.mp4");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, progress).await;
+
+    assert!(result.is_ok(), "valid MP4 should transcode successfully, got: {result:?}");
 }

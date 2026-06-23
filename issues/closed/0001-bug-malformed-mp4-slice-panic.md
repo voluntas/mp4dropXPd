@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-06-22
-- Completed:
+- Completed: 2026-06-23
 
 - Branch: なし (CODEBASE.md 参照。develop に直接コミット)
 - Polished: 2026-06-23
