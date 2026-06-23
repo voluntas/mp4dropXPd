@@ -213,7 +213,15 @@ impl DropWindow {
                         format!("{ok} 成功, {err} 失敗: {first}")
                     }
                 }
-                Err(e) => format!("Task: {e:?}"),
+                Err(e) => {
+                    if e.is_panic() {
+                        tracing::error!(error = %e, "encode task panicked");
+                        "エンコードタスクがパニックしました".into()
+                    } else {
+                        tracing::error!(error = %e, "encode task failed");
+                        "エンコードタスクが失敗しました".into()
+                    }
+                }
             };
 
             let _ = this.update(cx, |view, cx| {

@@ -26,6 +26,8 @@
   - @voluntas
 - [FIX] 英語コメントを全て日本語に書き換える (AGENTS.md 準拠)
   - @voluntas
+- [FIX] エンコードタスクの panic 時に UI にユーザーフレンドリーな文言を表示する
+  - @voluntas
 - [FIX] 入力音声サンプルの composition_time_offset が mux 時に破棄される問題を修正する
   - @voluntas
 - [FIX] f64 ソートを整数ソートに置き換え長時間動画の順序破壊を防止する
