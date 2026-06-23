@@ -4,8 +4,8 @@
 - Created: 2026-06-22
 - Completed:
 - Model: opencode-go/minimax-m3
-- Branch: feature/refactor-shared-state-to-entity
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -34,3 +34,13 @@
 2. `src/main.rs` (または `app.rs` の初期化) で `cx.new_model(|_| AppState::default())` してエンティティ化
 3. `DropWindow`, `MenuWindow`, `OptionsWindow` から `recipe` / `settings` フィールドを削除し、`Entity<AppState>` を保持
 4. `publish_*` ヘルパーを削除し、`cx.update_entity(&entity, |state, cx| { state.recipe = new_recipe; cx.notify(); })` パターンに置換
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0019 (本 issue)** の順で develop に直接コミットする。0007 と 0009 の双方が closed になるまで本 issue は着手不可。
+- **0008 との関係**: 0008 (`bug-ui-strings-japanese`) は `src/app.rs` の UI 文字列を翻訳する。本 issue は `src/app.rs` を `src/app/{mod, state, drop_window, ...}.rs` に分割する。**0008 → 0019 の順** でコミットするか、**0008 と 0019 を統合** して 1 コミットにする。
+- **0020 との関係**: 0020 (`refactor-pending-flags-to-enum`) は `SharedState` のフラグを enum に置換する。0020 は本 issue 完了後 (もしくは 0020 と本 issue を統合) に着手。SharedState の構造が本 issue で変わるため、0020 の前提となる。
+- **0007 で整備される基盤**: `tests/test_app.rs` (UI テスト) への Entity パターンのテスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[REFACTOR] recipe/settings の重複と SharedGlobal 手書き pub/sub を GPUI Entity パターンに置換` を 1 行で追記する。

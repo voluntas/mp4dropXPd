@@ -4,8 +4,8 @@
 - Created: 2026-06-22
 - Completed:
 - Model: opencode-go/minimax-m3
-- Branch: feature/refactor-remove-dropstate-status
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -40,3 +40,14 @@
 6. `src/app.rs:115, 137` の `self.state.idle_hint();` を削除
 7. `src/app.rs:160` の `self.state.status = ...` を削除
 8. `src/app.rs:233` の `view.state.status = summary.into();` を削除
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0040 (本 issue)** の順で develop に直接コミットする。0007 と 0009 の双方が closed になるまで本 issue は着手不可。
+- **0039 との関係**: 0039 (`let _status = ...` 削除) は本 issue の一部に含まれる。**0039 と 0040 を統合** して 1 コミットにする。
+- **0008 との関係**: 0008 (UI 文字列日本語化) は `src/app.rs:88` の `"MP4 only"` 翻訳を含むが、0040 でこの行が削除されるため 0008 の翻訳対象から外れる。**0040 → 0008 の順** でコミットするか、**0008 と 0040 を統合** して 1 コミットにする。
+- **0001-0008 との並行**: 本 issue は `src/app.rs` の 8 箇所変更で、0001-0008 とは作業領域が重ならない。並行可。
+- **0007 で整備される基盤**: 新規テスト不要。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立) に `[REFACTOR] DropState::status / idle_hint (デッドコード) を削除` を 1 行で追記する。

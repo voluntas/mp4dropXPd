@@ -2,10 +2,10 @@
 
 - Priority: Low
 - Created: 2026-06-22
-- Completed:
+- Completed: 2026-06-23
 - Model: opencode-go/minimax-m3
-- Branch: feature/refactor-remove-dead-app-settings-fields
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -45,3 +45,13 @@ YAGNI に従い、フィールドを削除する。永続化が本当に必要�
 - `#[expect(dead_code)] pub output_dir: PathBuf,` の行を削除
 - `recipe: EncodeRecipe::default(),` の行を削除
 - `output_dir: PathBuf::from("."),` の行を削除
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0024 (本 issue)** の順で develop に直接コミットする。0007 と 0009 の双方が closed になるまで本 issue は着手不可。
+- **0019 との関係**: 0019 (`SharedState` の Entity 化) は `AppSettings` の利用箇所を変更する可能性。本 issue で `AppSettings` から 2 フィールド削除するため、0019 との並行は安全 (0019 は `AppSettings` 自体は削除しない)。
+- **0041 との関係**: 0041 (`refactor-remove-dead-overwrite-ui`) は `AppSettings::overwrite` フィールド削除を扱う。0041 との並行は安全 (`overwrite` フィールドは本 issue の対象外)。
+- **0007 で整備される基盤**: ドキュメント/フィールド削除のみなので新規テスト不要。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立) に `[REFACTOR] AppSettings::recipe / output_dir (dead code) を削除` を 1 行で追記する。

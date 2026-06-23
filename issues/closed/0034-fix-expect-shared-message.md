@@ -2,10 +2,10 @@
 
 - Priority: Low
 - Created: 2026-06-22
-- Completed:
+- Completed: 2026-06-23
 - Model: opencode-go/minimax-m3
-- Branch: feature/fix-expect-shared-message
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -37,3 +37,12 @@ fn shared(cx: &App) -> std::sync::MutexGuard<'_, SharedState> {
 ## 解決方法
 
 `src/app.rs:35` を `.expect("SharedGlobal mutex poisoned (mutex を保持するスレッドが panic した場合のみ発生)")` に変更。
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0034 (本 issue)** の順で develop に直接コミットする。0007 と 0009 の双方が closed になるまで本 issue は着手不可。
+- **0001-0008 との並行**: 本 issue は `src/app.rs:35` の 1 行メッセージ変更で、0001-0008 とは作業領域が重ならない。並行可。
+- **0007 で整備される基盤**: 新規テスト不要。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立) に `[FIX] shared 関数の expect メッセージを具体的な mutex poison 説明に` を 1 行で追記する。

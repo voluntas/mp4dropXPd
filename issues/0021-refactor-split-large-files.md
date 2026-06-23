@@ -4,8 +4,8 @@
 - Created: 2026-06-22
 - Completed:
 - Model: opencode-go/minimax-m3
-- Branch: feature/refactor-split-large-files
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -45,3 +45,14 @@
 9. `src/encode/transcode/audio.rs` に `encode_audio`, `make_audio_decoder`, `decode_audio_to_pcm`, `encode_audio_aac`, `encode_audio_opus`, `resample_linear` を移動
 10. `src/encode/transcode/mux.rs` に `write_mp4` を移動
 11. `src/encode/transcode/params.rs` に `first_sample_entry`, `resolution_of`, `audio_params_of`, `extract_h265_params`, `copy_stride`, `average_duration`, `average_bitrate_kbps` を移動
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0001-0008 すべて完了 → 0021 (本 issue)** の順で develop に直接コミットする。本 issue は大規模リファクタで、0001-0008 の修正が安定した後に着手する。
+- **0001-0008 との関係**: 0001-0008 の修正対象 (`transcode.rs:114-116`, `515-540`, `306-330`, `986-1109`, `174-205`, `103-106`, `src/app.rs` UI 文字列) は本 issue の分割後の各ファイルに散らばる。**0001-0008 → 0021 の順** でコミットする。
+- **0019 / 0020 との関係**: 0019 (`SharedState` の Entity 化) と 0020 (`pending_*` フラグ enum 化) は `src/app.rs` の構造を変える。本 issue と 0019/0020 の両方が `src/app.rs` を変更するため、**0019/0020 → 0021 の順** でコミットするか、**0019/0020 と 0021 を統合** して 1 コミットにする。
+- **0029 / 0030 との関係**: 0029 (`refactor-progress-to-event-driven`) と 0030 (`refactor-encode-video-generic`) は `transcode.rs` の構造を変える。これも本 issue と並行不可。**0029/0030 → 0021 の順** でコミットするか、**0021 完了後** に 0029/0030 に着手。
+- **0007 で整備される基盤**: 本 issue 完了後の各モジュールに対して個別テストを追加するのは 0007 の基盤に依存。0007 完了後に別 issue で対応。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認 (`pub` の可視性変更、`use` パス修正などで警告が出る可能性あり)。
+- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立、機能に直接影響しない変更) に `[REFACTOR] app.rs (1222 行) / transcode.rs (1121 行) を機能別モジュールに分割` を 1 行で追記する。

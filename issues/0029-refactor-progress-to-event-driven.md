@@ -4,8 +4,8 @@
 - Created: 2026-06-22
 - Completed:
 - Model: opencode-go/minimax-m3
-- Branch: feature/refactor-progress-to-event-driven
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -47,3 +47,13 @@ loop {
 1. `src/encode/mod.rs:24-62` の `JobProgress` に `notify: Arc<tokio::sync::Notify>` フィールドを追加
 2. `set_total` / `add_processed` 内で `self.notify.notify_one()` を呼ぶ
 3. `src/app.rs:196-209` の polling ループを `loop { let _ = self.notify.notified().await; /* UI 更新 */ if done { break; } }` に置換
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0028 → 0029 (本 issue)** の順で develop に直接コミットする。0028 (進捗カウント位相) 完了後に着手。0007 と 0009 の双方が closed になるまで本 issue は着手不可。
+- **0012 との関係**: 0012 (音声進捗) と並行可。`JobProgress` の API 拡張 (notify フィールド追加) は 0012 と衝突しない。
+- **0032/0046 との関係**: 0032 (`add-tracing-logging`) と 0046 (`refactor-remove-tracing-init`) は tracing 設定を扱う。本 issue は `JobProgress` のみで、tracing とは独立。並行可。
+- **0007 で整備される基盤**: `tests/test_app.rs` への通知ベースの進捗テスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立) に `[REFACTOR] 進捗 100ms polling を tokio::sync::Notify によるイベント駆動に置換` を 1 行で追記する。

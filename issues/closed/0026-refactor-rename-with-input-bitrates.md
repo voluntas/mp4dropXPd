@@ -2,10 +2,10 @@
 
 - Priority: Low
 - Created: 2026-06-22
-- Completed:
+- Completed: 2026-06-23
 - Model: opencode-go/minimax-m3
-- Branch: feature/refactor-rename-with-input-bitrates
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -55,3 +55,12 @@ pub fn with_input_bitrates(
 ## 解決方法
 
 `src/codec.rs:56` を `pub fn resolve_input_bitrates(self, video_input_kbps: Option<u32>, audio_input_kbps: Option<u32>) -> Self` に変更。`src/encode/transcode.rs:150` の呼び出し元も `recipe.resolve_input_bitrates(...)` に更新。
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0026 (本 issue)** の順で develop に直接コミットする。0007 と 0009 の双方が closed になるまで本 issue は着手不可。
+- **0007 で整備される基盤**: 0007 の `prop_codec.rs` で `with_input_bitrates` をテスト対象としている場合、本 issue 完了後に `resolve_input_bitrates` へのテスト更新が必要。**0007 完了後** に本 issue に着手するか、**0007 と本 issue を統合** して 1 コミットにする。
+- **0001-0008 との並行**: 本 issue は `src/codec.rs` の 1 関数リネームで、0001-0008 とは作業領域が重ならない (`transcode.rs` の修正のみ)。並行可。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立) に `[REFACTOR] EncodeRecipe::with_input_bitrates を resolve_input_bitrates にリネーム` を 1 行で追記する。

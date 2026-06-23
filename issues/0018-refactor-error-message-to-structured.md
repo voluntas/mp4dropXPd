@@ -4,8 +4,8 @@
 - Created: 2026-06-22
 - Completed:
 - Model: opencode-go/minimax-m3
-- Branch: feature/refactor-error-message-to-structured
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -36,3 +36,19 @@
 2. `error.rs:80-84` の `From<DemuxError>` 実装を `Self::Demux(e)` に変更
 3. `src/encode/transcode.rs` の `map_err(|e| Error::Message(format!("xxx error: {e}")))` を `?` または `.map_err(Into::into)?` に置換
 4. `tests/test_error.rs` で Display の各バリアントを検証
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0001-0008 すべて完了 → 0018 (本 issue)** の順で develop に直接コミットする。本 issue はリファクタで、0001-0008 が追加した `Error::Message` 箇所を構造化バリアントに置換するため、0001-0008 の完了が前提。
+- **0001, 0002, 0003, 0004, 0005, 0006 との関係**: これらの issue で追加した `Error::Message` 3 箇所 (0001), 1 箇所 (0002), 1 箇所 (0003) 等を本 issue で構造化バリアントに置換する。**0001-0008 → 0018 の順** でコミットする。
+- **0007 で整備される基盤**: `tests/test_error.rs` への単体テスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
+- **0018 着手時の具体的置換対象**:
+  - 0001: `Error::InvalidSampleRange { start, end, file_size }` バリアント新設
+  - 0002: `Error::DrainTimeout { elapsed, expected, received }` バリアント新設 (0018:27 で言及済み)
+  - 0003: `Error::Dav1dDecode { phase: &'static str }` または `Error::BitDepth { expected, actual }` バリアント新設
+  - 0004: `Error::Rename { from, to }` バリアント新設
+  - 0005: `Error::TrackEncode { track: TrackKind, message }` バリアント新設
+  - 0006: `Error::NoTrack { kind: Option<TrackKind> }` バリアント新設
+- **0018 着手前のバリアント名確定**: 上記バリアント名は本 issue 内で確定し、0001-0008 の `Error::Message` 追加箇所を本 issue で順次置換する。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] Error::Message の濫用を構造化バリアントに置換` を 1 行で追記する。

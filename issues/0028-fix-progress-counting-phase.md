@@ -4,8 +4,8 @@
 - Created: 2026-06-22
 - Completed:
 - Model: opencode-go/minimax-m3
-- Branch: feature/fix-progress-counting-phase
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -31,3 +31,13 @@ UI の進捗バーが実エンコード完了と一致する。短時間ファ�
 ## 解決方法
 
 `src/encode/transcode.rs:400, 482, 589` の `progress.add_processed(1)` を `drain_vt_encoder` / `encoder.next_frame()` ループ後に移動。`src/encode/transcode.rs:404-409, 486-491` で `encoded_frames.len()` を `progress.set_total(encoded_frames.len())` のように再計算し、実際の完了フレーム数で `add_processed` を呼ぶ。
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0028 (本 issue)** の順で develop に直接コミットする。0007 と 0009 の双方が closed になるまで本 issue は着手不可。
+- **0012 との関係**: 0012 (`bug-audio-only-progress`) は音声側の進捗を扱う。本 issue は映像側の進捗 (drain 完了ベース) で、0012 とは独立した修正領域。並行可。
+- **0029 との関係**: 0029 (`refactor-progress-to-event-driven`) は進捗をイベント駆動化する。本 issue は進捗カウントの位相を変えるだけで、0029 とは独立。**0028 → 0029 の順** でコミットする。
+- **0007 で整備される基盤**: `tests/test_encode.rs` への進捗テスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] 進捗カウンタをエンコード完了ベース (drain 完了時) に変更` を 1 行で追記する。

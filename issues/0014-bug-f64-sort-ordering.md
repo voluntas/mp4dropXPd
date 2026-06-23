@@ -4,8 +4,8 @@
 - Created: 2026-06-22
 - Completed:
 - Model: opencode-go/minimax-m3
-- Branch: feature/fix-f64-sort-ordering
-- Polished:
+- Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
+- Polished: 2026-06-23
 - Reporter:
 
 ## 目的
@@ -37,3 +37,12 @@ events のキーを整数化するため、サンプルベースの priority que
 ## 解決方法
 
 `src/encode/transcode.rs:1002-1034` の `events: Vec<(f64, OutputKind)>` を `events: Vec<MergeEvent { track_kind: TrackKind, timescale: NonZeroU32, timestamp: u64, kind: OutputKind }>` に変更し、最初のサンプルを全トラックから読んでヒープ (`BinaryHeap`) に格納する形にして O(N log N) かつ整数キーの merge sort にする。`sec = timestamp / timescale.get() as f64` ではなく、整数比較で直接順序を決定する。
+
+実装時の確認手順:
+
+- **依存順序**: **0007 (テスト基盤整備) → 0009 (CHANGES.md 新規作成) → 0014 (本 issue)** の順で develop に直接コミットする。0007 と 0009 の双方が closed になるまで本 issue は着手不可。
+- **0001-0008 との並行**: 本 issue は `transcode.rs:1002-1034` の `events` Vec と sort ロジックの書き換えで、0001 (`114-116`)、0002 (`515-540`)、0003 (`306-330`)、0004 (`986-1109`)、0005 (`174-205`)、0006 (`103-106`) とは作業領域が重なる可能性がある (0004 は `write_mp4` 内の `events` を使用)。0004 と本 issue の両方が `events` 構造を変える場合、**0004 → 0014 の順** でコミットするか、**0004 と 0014 を統合** して 1 コミットにする。**0007 → 0009 → 0006 → 0001 → 0002 → 0003 → 0004/0014 → 0005** の順。
+- **0007 で整備される基盤**: `tests/test_encode.rs` への長時間動画 (24 時間以上) smoke test 追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
+- **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
+- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] f64 ソートを 100ns 単位の整数キーに変更 (24 時間動画で順序破壊を防止)` を 1 行で追記する。
