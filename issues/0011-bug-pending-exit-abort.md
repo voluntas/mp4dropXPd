@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -55,5 +53,5 @@ detach されたタスクは `this.update(cx, ...)` を app.rs:229-238 で呼ぶ
 - **0004 との並行**: 0004 (`TempFile` 導入) で「abort 時に部分成功ファイルが残る可能性」を `TempFile::drop` でカバーできる。0011 の abort 機構と 0004 の TempFile が組み合わさって安全な abort 動作になる。**0004 → 0011 の順** でコミットするか、**0004 と 0011 を統合** して 1 コミットにする。
 - **0007 で整備される基盤**: `tests/test_app.rs` (UI テスト) への abort シナリオのテスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。abort シナリオのテストは UI 操作を含むため、UI テストフレームワーク (`gpui` のテストユーティリティ等) のセットアップも必要。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
-- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] エンコード中の quit でタスクを abort` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
