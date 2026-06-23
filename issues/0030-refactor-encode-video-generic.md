@@ -3,10 +3,8 @@
 - Priority: Low
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -40,5 +38,5 @@
 - **0001, 0002, 0003 との関係**: 0001 (破損 MP4 slice), 0002 (drain timeout), 0003 (dav1d error) は `transcode.rs:114-116, 515-540, 306-330` を変更する。本 issue は `transcode.rs:352-513, 542-638` のリファクタで、0001-0003 完了後に着手。
 - **0007 で整備される基盤**: ドキュメント/リファクタのみなので新規テスト不要だが、0030 完了後の各エンコーダ関数のテストは 0007 基盤利用。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
-- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立) に `[REFACTOR] encode_video_h264/h265/av1 の重複を encode_video_generic に集約` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
