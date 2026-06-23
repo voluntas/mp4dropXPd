@@ -3,10 +3,9 @@
 - Priority: High
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
+
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -48,8 +47,8 @@ while encoded_frames.len() < expected {
 
 - 連続 `Ok(None)` 累計時間で 30 秒経過 → `Err(Error::Message(...))` を返す
 - `Ok(Some)` 受信時 → タイマーをリセットして継続
-- `Err(e)` 受信時 → 既存通り `Err` を `?` で伝播
-- `expected == 0` → ループに入らず即 `Ok(vec![])` を返す (既存挙動と同じ)
+- `Err(e)` 受信時 → 既存通り `return Err(Error::Message(...))` でエラーを伝播
+- `expected == 0` → ループに入らず即 `Ok(vec![])` を返す。呼び出し元の `encode_video_h264`/`encode_video_h265` では `samples.len()` を渡し、空スライスは事前に `first_sample_entry` で弾かれるため到達不能だが、防御的ガードとして残す
 
 `last_progress` は関数エントリ時に `Instant::now()` で初期化する。これにより、最初の `next_frame()` が `Ok(None)` だった場合の計測起点は関数エントリ時となる。厳密には「最初の Ok(None) 観測時点」ではないが、エントリから最初の `next_frame()` まではマイクロ秒オーダーであり、30 秒のタイムアウトに対して誤差は無視できる。
 
@@ -62,9 +61,9 @@ while encoded_frames.len() < expected {
 - `Ok(Some)` 受信時にタイムアウトタイマーがリセットされる
 - `Err` メッセージに経過時間 (`elapsed`)、期待フレーム数 (`expected`)、取得済みフレーム数 (`received`) の 3 値が含まれる
 - 正常 MP4 の smoke test が `tests/test_encode.rs` に追加され、修正後も成功することを確認する。smoke test の実行時間は 30 秒より十分短いこと。CI 環境での実測値を smoke test のコメントに記載する
-- タイムアウト発生時の挙動テスト: `#[cfg(test)]` で `DRAIN_VT_ENCODER_STALL_TIMEOUT` を短縮 (例: `Duration::from_millis(200)`) する方法を利用するか、正常系 smoke test + CI での手動確認で妥協する。モック禁止規約 (AGENTS.md) 下では偽の `VtEncoder` を作れないため、タイムアウトパスの自動テストは必須としない
+- タイムアウト発生時の挙動テスト: モック禁止規約 (AGENTS.md) 下では偽の `VtEncoder` を作れないため、タイムアウトパスの自動テストは必須としない。正常系 smoke test による間接検証で妥協する
 - `cargo clippy --workspace --all-targets -- -D warnings` を通過する
-- `CHANGES.md` (0009 で新規作成) の `### 不具合修正` に本修正を追記する (`shiguredo-changelog` 規約)
+- `CHANGES.md` (0009 で新規作成) の `### 不具合修正` に `[FIX] drain_vt_encoder の永久 busy-wait を 30 秒タイムアウトに変換する` を追記する (`shiguredo-changelog` 規約)
 
 ## 解決方法
 
@@ -128,9 +127,9 @@ fn drain_vt_encoder(
 - **0007 で整備される基盤**: `tests/test_encode.rs` への本 issue のテスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
 - **0009 で整備される CHANGES.md**: 完了条件の `### 不具合修正` への追記は、0009 で `CHANGES.md` が新規作成されてから行う。
 - **0011 との連携**: `0011-bug-pending-exit-abort` の abort 機構は `spawn_blocking` の `std::thread::sleep` を中断できないため、drain 中の `pending_exit` 設定でも 30 秒待つ。本 issue はタイムアウトを短くするだけで根本解決はしない。0011 側で別機構を入れる想定。
-- **0048 (過去履歴コメント削除) との関係**: 本 issue の修正対象である `transcode.rs:520-523` のコメントは提案コードで完全に置換される。0048 の作業対象は本 issue のコミットで消滅するため、0048 は本 issue 完了後に close する。
+- **0048 (過去履歴コメント削除) との関係**: closed/0048 は既に完了済み。本 issue の修正 (drain_vt_encoder の関数全体書き換え) で対象コメントは自然に置換されるため、0048 の作業と競合しない。
 - **0018 との関係**: 本 issue で追加する `Error::Message` 1 箇所は 0018 での構造化バリアント置換対象 (0018 で `Error::DrainTimeout` 案あり)。0018 着手時に構造化バリアントへ置換される。本 issue は 0018 の前段にあたり、並行着手はできない。
-- **tracing 初期化**: `tracing::warn!` の出力先は 0007 のテスト基盤整備後、main.rs の `tracing_subscriber` 初期化により利用可能。完了条件「ログが出力される」の検証は smoke test 実行時に行う。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
+- `tracing::warn!` を用いて経過時間、期待フレーム数、取得済みフレーム数をログ出力する (英語)
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
 - **リソースリーク確認**: タイムアウト発生時、`encoder` は呼び出し元のスコープを抜けて `Drop` される。`shiguredo_video_toolbox::VtEncoder::Drop` が `VTCompressionSessionInvalidate` を呼ぶため安全。
-- **CHANGES.md 追記**: `### 不具合修正` に「`drain_vt_encoder` の永久 busy-wait を 30 秒タイムアウトに変換」を 1 行で追記する。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
