@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -54,5 +52,5 @@
 - **0029 / 0030 との関係**: 0029 (`refactor-progress-to-event-driven`) と 0030 (`refactor-encode-video-generic`) は `transcode.rs` の構造を変える。これも本 issue と並行不可。**0029/0030 → 0021 の順** でコミットするか、**0021 完了後** に 0029/0030 に着手。
 - **0007 で整備される基盤**: 本 issue 完了後の各モジュールに対して個別テストを追加するのは 0007 の基盤に依存。0007 完了後に別 issue で対応。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認 (`pub` の可視性変更、`use` パス修正などで警告が出る可能性あり)。
-- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立、機能に直接影響しない変更) に `[REFACTOR] app.rs (1222 行) / transcode.rs (1121 行) を機能別モジュールに分割` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
