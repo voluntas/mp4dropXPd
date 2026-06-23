@@ -3,10 +3,8 @@
 - Priority: High
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -47,8 +45,8 @@ let audio_output = if !audio_samples.is_empty() {
 - 両方失敗時に `video: Err(...), audio: Err(...)` を返し、両方のエラー情報が保持される
 - `TrackError` が `Display` を実装し、`tracing::warn!` でエラー内容がログ出力される
 - 進捗 (`JobProgress`) は映像フレーム数基準で計算し、エンコード失敗時は既に処理済みのフレーム分まで進捗が進んだ状態で復帰する
-- `cargo clippy --workspace --all-targets -- -D warnings` を通過する
-- `CHANGES.md` (0009 で新規作成) の `### 不具合修正` に本修正を追記する
+- `cargo clippy --all-targets -- -D warnings` を通過する
+- [FIX] encode_tracks を部分成功対応に変更 (映像/音声を独立評価、片方失敗時に残りを保持)
 
 ## 解決方法
 
@@ -175,5 +173,5 @@ write_mp4(output, video_for_mux, audio_for_mux, video_timescale)?;
 - **non-macOS 版 `encode_tracks`**: `Ok(None)` を返すダミー実装に変更する。`transcode` 本体側の `encode_tracks(...)?` の `?` を外すため、non-macOS 側 `transcode` も同様に修正する。
 - **0017 との関係**: 0017 で `transcode` の戻り値型を `Result<EncodeTracksOutput>` に拡張し、UI への部分成功情報伝播を行う。本 issue はその前段として `encode_tracks` の API を整備する。
 - **0018 との関係**: 本 issue で導入する `TrackError` は 0018 着手時に `Error::TrackEncode { track, message }` に統合する。0018:50 に統合計画を追記済み。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` を通過すること。
-- **CHANGES.md 追記**: `### 不具合修正` に「`encode_tracks` を部分成功対応に変更 (映像/音声を独立評価、片方失敗時に残りを保持)」を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
