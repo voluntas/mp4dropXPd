@@ -23,7 +23,7 @@ async fn subtitle_only_mp4_returns_error() {
 
     assert!(result.is_err());
     assert!(
-        matches!(result, Err(Error::Message(ref msg)) if msg == "no video/audio track in input"),
+        matches!(result, Err(Error::NoTrack)),
         "expected no video/audio track error, got: {result:?}"
     );
 }

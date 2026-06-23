@@ -115,7 +115,7 @@ pub fn transcode(
     // (write_mp4 に None, None を渡すと破損 MP4 が生成されるため)
     if video_idx.is_none() && audio_idx.is_none() {
         tracing::warn!("no video/audio track in input");
-        return Err(Error::Message("no video/audio track in input".into()));
+        return Err(Error::NoTrack);
     }
 
     // demuxer から時系列順にサンプルを取得し、トラック別に蓄積
@@ -135,10 +135,11 @@ pub fn transcode(
                 if end > input_data.len() {
                     // 破損入力の兆候として warn ログを出力する
                     tracing::warn!("sample data out of range: {start}..{end}, file size {}", input_data.len());
-                    return Err(Error::Message(format!(
-                        "サンプルデータが範囲外です: {start}..{end}, ファイルサイズ {}",
-                        input_data.len()
-                    )));
+                    return Err(Error::InvalidSampleRange {
+                        start,
+                        end,
+                        file_size: input_data.len(),
+                    });
                 }
                 let data = input_data[start..end].to_vec();
                 let raw = RawSample {
@@ -158,7 +159,7 @@ pub fn transcode(
             Ok(None) => break,
             Err(e) => {
                 tracing::error!(error = %e, "demux error");
-                return Err(Error::Message(format!("demux error: {e}")));
+                return Err(e.into());
             }
         }
     }
@@ -224,24 +225,7 @@ pub fn transcode(
 
 #[cfg(target_os = "macos")]
 #[cfg(target_os = "macos")]
-type TrackEncodeResult<T> = std::result::Result<Option<T>, TrackError>;
-
-#[cfg(target_os = "macos")]
-#[derive(Debug)]
-enum TrackError {
-    Video(String),
-    Audio(String),
-}
-
-#[cfg(target_os = "macos")]
-impl std::fmt::Display for TrackError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Video(s) => write!(f, "video: {s}"),
-            Self::Audio(s) => write!(f, "audio: {s}"),
-        }
-    }
-}
+type TrackEncodeResult<T> = std::result::Result<Option<T>, Error>;
 
 #[cfg(target_os = "macos")]
 struct EncodeTracksOutput {
@@ -269,7 +253,10 @@ fn encode_tracks(
             Ok(output) => Ok(Some(output)),
             Err(e) => {
                 tracing::warn!("video encode failed: {e}");
-                Err(TrackError::Video(e.to_string()))
+                Err(Error::TrackEncode {
+                    track: "video",
+                    message: e.to_string(),
+                })
             }
         }
     } else {
@@ -287,7 +274,10 @@ fn encode_tracks(
             Ok(output) => Ok(Some(output)),
             Err(e) => {
                 tracing::warn!("audio encode failed: {e}");
-                Err(TrackError::Audio(e.to_string()))
+                Err(Error::TrackEncode {
+                    track: "audio",
+                    message: e.to_string(),
+                })
             }
         }
     } else {
@@ -669,9 +659,11 @@ fn drain_vt_encoder(
                         received,
                         "video encoder stalled"
                     );
-                    return Err(Error::Message(format!(
-                        "video encoder stalled: elapsed {elapsed:?}, expected {expected} frames, received {received}"
-                    )));
+                    return Err(Error::DrainTimeout {
+                        elapsed: format!("{elapsed:?}"),
+                        expected,
+                        received,
+                    });
                 }
                 // スリープで CPU を譲りつつポーリング間隔を確保
                 std::thread::sleep(std::time::Duration::from_micros(100));
