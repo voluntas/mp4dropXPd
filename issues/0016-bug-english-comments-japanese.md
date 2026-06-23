@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -50,5 +48,5 @@ AGENTS.md「コメントは全て日本語にすること」を満たしてい�
 - **0008 との関係**: 0008 (`bug-ui-strings-japanese`) は UI 文字列 (リテラル) の日本語化で、本 issue はコメントの日本語化。直接 conflict しないが、AGENTS.md 規約違反修正の同タイミング着手で PR/review 見通しが悪化するため、**0008 → 0016 の順** でコミットする。
 - **0007 で整備される基盤**: ドキュメント/コメントのみの変更なので新規テスト不要。0007 のテスト基盤は不要。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認 (コメント変更のみなので影響なし)。
-- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] 英語コメントを日本語に書き換え` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
