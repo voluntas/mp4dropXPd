@@ -3,10 +3,8 @@
 - Priority: Low
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -50,4 +48,4 @@
 - **0007 で整備される基盤**: 新規テスト不要。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
 - **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
-- **CHANGES.md 追記**: `### misc` サブセクション (0009 で確立) に `[REFACTOR] DropState::status / idle_hint (デッドコード) を削除` を 1 行で追記する。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
