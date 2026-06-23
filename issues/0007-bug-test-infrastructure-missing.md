@@ -4,10 +4,8 @@
 - Category: add
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -49,8 +47,8 @@ shiguredo-rust 規約「PBT は proptest を使うこと」「Fuzzing は cargo-
 - `cargo test` で 1 個以上のテストが実行される (`prop_codec.rs` の PBT)
 - `.github/workflows/test.yml` が新設され、PR ごとに macos-latest で `cargo test` が走る
 - 公開 API (`EncodeRecipe::summary` / `with_input_bitrates`) の PBT が緑
-- `cargo clippy --workspace --all-targets -- -D warnings` (`prek.toml:28`) を通過する
-- `## 追加` 等に本基盤導入が追記されている (`shiguredo-changelog` 規約)
+- `cargo clippy --all-targets -- -D warnings` (`prek.toml:28`) を通過する
+- [ADD] テスト基盤導入 (`proptest` 依存、`pbt/tests/`、`tests/` ディレクトリ、`.github/workflows/test.yml`、最初の PBT `prop_codec.rs`)
 - 別 issue 切り出しの 9 件 (上記) が `issues/` 配下に新規作成されている (もしくは既存の関連 issue に統合)
 
 ## 解決方法
@@ -134,7 +132,7 @@ jobs:
       - name: Run tests
         run: cargo test --workspace
       - name: Run clippy
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --all-targets -- -D warnings
 ```
 
 実装時の確認手順:
@@ -146,5 +144,5 @@ jobs:
 - **fixtures の分離**: 0001-0006 が要求するフィクスチャ (破損 MP4 各種、正常 AV1、字幕のみ MP4 等) は別 issue `add-test-fixtures` に切り出す。
 - **0032 / 0046 との関係**: 本 issue では `tracing-test` 等のテストユーティリティは追加しない。`tracing::warn!` のテストは 0032 (`add-tracing-logging`) / 0046 (`refactor-remove-tracing-init`) の判断に従う。
 - **0033 との関係**: doc test (`cargo test --doc`) は 0033 (`doc-add-spec-references`) のスコープ。本 issue では要求しない。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認 (`prek.toml:28` の hook がコミット時に同じチェックを行う)。
-- **CHANGES.md 追記**: 0009 で `CHANGES.md` が新規作成された後、`## 追加` セクション (もしくは 0009 で定義される規約に従う) に「テスト基盤導入 (`proptest` 依存、`pbt/tests/`、`tests/` ディレクトリ、`.github/workflows/test.yml`、最初の PBT `prop_codec.rs`)」を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
