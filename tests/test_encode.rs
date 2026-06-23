@@ -112,3 +112,20 @@ async fn truncated_av1_mp4_does_not_panic() {
     // パニックせずに Err が返れば OK（demux エラーまたはデコードエラーのいずれか）
     assert!(result.is_err(), "truncated AV1 MP4 should return Err, got: {result:?}");
 }
+
+/// エンコード失敗時に出力パスに破損ファイルが残らないことを確認する
+#[tokio::test]
+async fn failed_encode_does_not_leave_output_file() {
+    let input = Path::new("tests/fixtures/random_bytes.mp4");
+    let output = Path::new("/tmp/test_output_atomic_failure.mp4");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    // 事前に出力ファイルを削除しておく
+    let _ = std::fs::remove_file(output);
+    let result = encode_file_async(input, output, recipe, progress).await;
+    assert!(result.is_err());
+
+    // tmp + atomic rename 方式により、失敗時は出力ファイルが残らない
+    assert!(!output.exists(), "output file should not exist after failed encode");
+}

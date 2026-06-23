@@ -12,6 +12,8 @@
   - @voluntas
 - [FIX] AV1 (dav1d) デコードのエラー握り潰しと最終フレームドレイン漏れを修正する
   - @voluntas
+- [FIX] write_mp4 を tmp + atomic rename 方式に変更し出力ファイル破損を防止する
+  - @voluntas
 
 ### misc
 

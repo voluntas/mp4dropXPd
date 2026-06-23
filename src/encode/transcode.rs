@@ -1048,6 +1048,68 @@ fn average_bitrate_kbps(samples: &[RawSample], timescale: u32) -> Option<u32> {
 // ===== MP4 出力 =====
 
 #[cfg(target_os = "macos")]
+/// エンコード失敗時に `Drop` で自動削除される一時ファイル
+struct TempFile {
+    path: std::path::PathBuf,
+    committed: bool,
+}
+
+#[cfg(target_os = "macos")]
+impl TempFile {
+    /// `output` と同じディレクトリ内に pid + counter を含む
+    /// 一意な一時ファイルパスを生成して `File::create` する
+    fn new(output: &Path) -> Result<Self> {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        // プロセス内の他ジョブと衝突しないよう pid + counter を付与
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let pid = std::process::id();
+        let counter = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let parent = output
+            .parent()
+            .ok_or_else(|| Error::Message("output has no parent directory".into()))?;
+        let file_name = output
+            .file_name()
+            .ok_or_else(|| Error::Message("output has no file name".into()))?
+            .to_string_lossy()
+            .into_owned();
+        let tmp_path = parent.join(format!(".{file_name}.{pid}.{counter}.tmp"));
+        // File::create は truncate するため、既存の同名 tmp があれば削除される
+        // (pid + counter 衝突時のみ発生、確率は極小)
+        std::fs::File::create(&tmp_path)?;
+        Ok(Self {
+            path: tmp_path,
+            committed: false,
+        })
+    }
+
+    /// 一時ファイルのパスを返す
+    fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /// `rename` 成功後に呼び、`Drop` での削除を防ぐ
+    fn commit(mut self) {
+        self.committed = true;
+    }
+}
+
+#[cfg(target_os = "macos")]
+impl Drop for TempFile {
+    fn drop(&mut self) {
+        if !self.committed
+            && let Err(e) = std::fs::remove_file(&self.path)
+        {
+            // 失敗時も処理継続 (ログのみ、業務影響なし)
+            tracing::warn!(
+                path = %self.path.display(),
+                error = %e,
+                "failed to remove temp file on drop"
+            );
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
 fn write_mp4(
     output: &Path,
     video: Option<VideoOutput>,
@@ -1057,7 +1119,11 @@ fn write_mp4(
     let mut muxer = Mp4FileMuxer::new().map_err(|e| Error::Message(format!("muxer init: {e}")))?;
     let initial_bytes = muxer.initial_boxes_bytes().to_vec();
 
-    let mut file = std::fs::File::create(output)?;
+    // 既存ファイルを truncate せず、tmp に書き出してから atomic rename する
+    let temp = TempFile::new(output)?;
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .open(temp.path())?;
     file.write_all(&initial_bytes)?;
 
     // 音声の timescale は出力サンプルレートを使う (timestamp がサンプル単位のため)
@@ -1170,6 +1236,9 @@ fn write_mp4(
     }
     file.flush()?;
 
+    // atomic rename で出力先に置換。失敗時は Drop で tmp 削除
+    std::fs::rename(temp.path(), output)?;
+    temp.commit();
     Ok(())
 }
 
