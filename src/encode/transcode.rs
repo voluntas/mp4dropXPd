@@ -105,6 +105,13 @@ pub fn transcode(
     let video_idx = tracks.iter().position(|t| t.kind == TrackKind::Video);
     let audio_idx = tracks.iter().position(|t| t.kind == TrackKind::Audio);
 
+    // 映像/音声トラックが一つもなければ出力対象がないため早期 return する
+    // (write_mp4 に None, None を渡すと破損 MP4 が生成されるため)
+    if video_idx.is_none() && audio_idx.is_none() {
+        tracing::warn!("no video/audio track in input");
+        return Err(Error::Message("no video/audio track in input".into()));
+    }
+
     // demuxer から時系列順にサンプルを取得し、トラック別に蓄積
     let mut video_samples: Vec<RawSample> = Vec::new();
     let mut audio_samples: Vec<RawSample> = Vec::new();
