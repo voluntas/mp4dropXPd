@@ -180,17 +180,9 @@ impl DropWindow {
 
             // 進捗をイベント駆動で待機しながらエンコード完了を待つ
             loop {
-                // 先頭の notify を待つ (いずれかのジョブで進捗があれば即座に UI 更新)
-                // 100ms のタイムアウトをフォールバックとして残す
+                // いずれかのジョブで進捗があれば即座に UI 更新する
                 if let Some(n) = notifies.first() {
-                    tokio::select! {
-                        _ = n.notified() => {}
-                        _ = cx.background_executor().timer(std::time::Duration::from_millis(100)) => {}
-                    }
-                } else {
-                    cx.background_executor()
-                        .timer(std::time::Duration::from_millis(100))
-                        .await;
+                    n.notified().await;
                 }
                 let total: f64 =
                     progresses_for_poll.iter().map(|p| p.ratio()).sum::<f64>() / job_count as f64;
