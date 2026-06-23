@@ -3,10 +3,8 @@
 - Priority: High
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -36,8 +34,8 @@ UI の「上書き保存」設定 (`AppSettings::overwrite`) をエンコード�
 - `overwrite = true` のとき、今まで通り truncate する
 - 0004 (atomic rename) と統合して 1 コミットにまとめるか、別 commit として develop に直接コミットする
 - `tests/test_encode.rs` に両ケース (`overwrite = true` / `overwrite = false` × 既存ファイルあり/なし) のテストが追加されている
-- `cargo clippy --workspace --all-targets -- -D warnings` (`prek.toml:28`) を通過する
-- `CHANGES.md` の `### 不具合修正` サブセクションに `[FIX] AppSettings::overwrite をエンコード経路に配線` が追記されている
+- `cargo clippy --all-targets -- -D warnings` (`prek.toml:28`) を通過する
+- [FIX] AppSettings::overwrite をエンコード経路に配線
 
 ## 解決方法
 
@@ -53,5 +51,5 @@ UI の「上書き保存」設定 (`AppSettings::overwrite`) をエンコード�
 - **0004 との統合判断**: 0004 の `TempFile` 導入後、本 issue で `OpenOptions` による overwrite 制御を追加する。0004 → 0010 の順または統合。
 - **0007 で整備される基盤**: `tests/test_encode.rs` へのテスト追加は 0007 完了後に行う。
 - **0018 との関係**: `Error::Io` 経由のため 0018 への影響なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` を通過すること。
-- **CHANGES.md 追記**: `### 不具合修正` に `[FIX] AppSettings::overwrite をエンコード経路に配線` を追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
