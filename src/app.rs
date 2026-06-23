@@ -53,7 +53,7 @@ impl DropState {
         Self {
             recipe: EncodeRecipe::default(),
             dropped_paths: Vec::new(),
-            status: "Drop MP4 here · 右クリックで設定".into(),
+            status: "MP4 をドロップ · 右クリックで設定".into(),
             encoding: false,
             settings: AppSettings::default(),
             progress: 0.0,
@@ -66,10 +66,10 @@ impl DropState {
             return;
         }
         if self.dropped_paths.is_empty() {
-            self.status = "Drop MP4 here · 右クリックで設定".into();
+            self.status = "MP4 をドロップ · 右クリックで設定".into();
         } else {
             self.status = format!(
-                "{} file(s) · {} · 右クリック → Encode",
+                "{} ファイル · {} · 右クリック → エンコード",
                 self.dropped_paths.len(),
                 self.recipe.summary()
             )
@@ -85,7 +85,7 @@ impl DropState {
             }
         }
         if self.dropped_paths.is_empty() {
-            self.status = "MP4 only".into();
+            self.status = "MP4 のみ".into();
         } else {
             self.idle_hint();
         }
@@ -157,7 +157,7 @@ impl DropWindow {
         self.state.encoding = true;
         self.state.progress = 0.0;
         self.state.encode_started = Some(Instant::now());
-        self.state.status = format!("Encoding {}…", self.state.dropped_paths.len()).into();
+        self.state.status = format!("エンコード中 {}…", self.state.dropped_paths.len()).into();
 
         let mut recipe = self.state.recipe;
         recipe.video_bitrate_kbps = self.state.settings.video_bitrate_kbps;
@@ -213,14 +213,14 @@ impl DropWindow {
                     let ok = rows.iter().filter(|(_, r)| r.is_ok()).count();
                     let err = rows.len().saturating_sub(ok);
                     if err == 0 {
-                        format!("Done ({ok})")
+                        format!("完了 ({ok})")
                     } else {
                         let first = rows
                             .iter()
                             .find_map(|(_, r)| r.as_ref().err())
                             .map(|e| e.to_string())
                             .unwrap_or_default();
-                        format!("{ok} ok, {err} err: {first}")
+                        format!("{ok} 成功, {err} 失敗: {first}")
                     }
                 }
                 Err(e) => format!("Task: {e:?}"),
@@ -246,7 +246,7 @@ impl DropWindow {
         let _ = cx.open_window(
             WindowOptions {
                 titlebar: Some(gpui::TitlebarOptions {
-                    title: Some("mp4dropXPd — Options".into()),
+                    title: Some("mp4dropXPd — オプション".into()),
                     ..Default::default()
                 }),
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
@@ -343,18 +343,18 @@ impl Render for DropWindow {
                     let total_estimated = elapsed / progress;
                     let remaining = (total_estimated - elapsed).max(0.0);
                     format!(
-                        "Encoding… {:.0}% · {:.0}s left",
+                        "エンコード中… {:.0}% · 残り {:.0}s",
                         progress * 100.0,
                         remaining
                     )
                 } else {
-                    format!("Encoding… {:.0}%", progress * 100.0)
+                    format!("エンコード中… {:.0}%", progress * 100.0)
                 }
             } else {
-                "Encoding…".to_string()
+                "エンコード中…".to_string()
             }
         } else {
-            "Ready".to_string()
+            "準備完了".to_string()
         };
 
         div()
@@ -407,7 +407,7 @@ impl Render for DropWindow {
                             view.schedule_encode(cx);
                         }
                     }))
-                    // 上部: "Drop MP4 Here"
+                    // 上部: "MP4 をドロップ"
                     .child(
                         div()
                             .flex()
@@ -420,13 +420,13 @@ impl Render for DropWindow {
                                     .text_lg()
                                     .font_weight(gpui::FontWeight::SEMIBOLD)
                                     .text_color(rgb(0xcccccc))
-                                    .child("Drop MP4 Here"),
+                                    .child("MP4 をドロップ"),
                             )
                             .child(
                                 div()
                                     .text_xs()
                                     .text_color(rgb(0x777777))
-                                    .child("Right-click for menu · Ctrl+Click"),
+                                    .child("右クリックでメニュー · Ctrl+クリック"),
                             ),
                     )
                     // 中央: Audio / Video コーデック情報 + ファイルリスト
@@ -443,7 +443,7 @@ impl Render for DropWindow {
                                     .child(recipe_summary),
                             )
                             .child(div().text_xs().text_color(rgb(0x666666)).child(format!(
-                                "Audio: {} · Video: {}",
+                                "音声: {} · 映像: {}",
                                 bitrate_label(self.state.settings.audio_bitrate_kbps),
                                 bitrate_label(self.state.settings.video_bitrate_kbps),
                             )))
@@ -587,10 +587,10 @@ impl Render for MenuWindow {
                         view.request(cx, |s| s.pending_open_options = true);
                         window_remove(cx);
                     }))
-                    .child("Options…"),
+                    .child("オプション…"),
             )
             .child(menu_sep())
-            .child(menu_label("Audio"))
+            .child(menu_label("音声"))
             .children(AudioCodec::ALL.into_iter().map(|a| {
                 let sel = a == self.recipe.audio;
                 div()
@@ -614,7 +614,7 @@ impl Render for MenuWindow {
                     })
             }))
             .child(menu_sep())
-            .child(menu_label("Video"))
+            .child(menu_label("映像"))
             .children(VideoCodec::ALL.into_iter().map(|v| {
                 let sel = v == self.recipe.video;
                 div()
@@ -654,9 +654,9 @@ impl Render for MenuWindow {
                         cx.notify();
                     }))
                     .child(if checked {
-                        "● Auto-encode on drop".to_string()
+                        "● ドロップ時自動エンコード".to_string()
                     } else {
-                        "    Auto-encode on drop".to_string()
+                        "    ドロップ時自動エンコード".to_string()
                     })
             })
             .child({
@@ -684,9 +684,9 @@ impl Render for MenuWindow {
             .child({
                 let enabled = self.can_encode;
                 let label: SharedString = if enabled {
-                    "Encode".into()
+                    "エンコード".into()
                 } else {
-                    "Encode (no files)".into()
+                    "エンコード (ファイルなし)".into()
                 };
                 let mut base =
                     div()
@@ -725,7 +725,7 @@ impl Render for MenuWindow {
                         view.request(cx, |s| s.pending_clear = true);
                         window_remove(cx);
                     }))
-                    .child("Clear"),
+                    .child("クリア"),
             )
             .child(menu_sep())
             .child(
@@ -741,7 +741,7 @@ impl Render for MenuWindow {
                         view.request(cx, |s| s.pending_exit = true);
                         window_remove(cx);
                     }))
-                    .child("Exit"),
+                    .child("終了"),
             )
             .into_any_element()
     }
@@ -779,7 +779,7 @@ fn menu_label(label: &'static str) -> gpui::Div {
 /// 0 のときは「Auto」(入力の実ビットレートを引き継ぐことを示す)
 fn bitrate_label(kbps: u32) -> String {
     if kbps == 0 {
-        "Auto".to_string()
+        "自動".to_string()
     } else {
         format!("{kbps} kbps")
     }
@@ -816,7 +816,7 @@ impl OptionsWindow {
         Self {
             recipe: EncodeRecipe::default(),
             settings: AppSettings::default(),
-            status: "Changes apply on Save".into(),
+            status: "保存ボタンで反映".into(),
             focus,
         }
     }
@@ -874,9 +874,9 @@ impl Render for OptionsWindow {
                 div()
                     .text_lg()
                     .font_weight(gpui::FontWeight::SEMIBOLD)
-                    .child("mp4dropXPd — Options"),
+                    .child("mp4dropXPd — オプション"),
             )
-            .child(options_section_label("Audio codec"))
+            .child(options_section_label("音声コーデック"))
             .child(
                 div()
                     .flex()
@@ -899,7 +899,7 @@ impl Render for OptionsWindow {
                             .child(a.label())
                     })),
             )
-            .child(options_section_label("Video codec"))
+            .child(options_section_label("映像コーデック"))
             .child(
                 div()
                     .flex()
@@ -922,9 +922,9 @@ impl Render for OptionsWindow {
                             .child(v.label())
                     })),
             )
-            .child(options_section_label("Behavior"))
+            .child(options_section_label("動作"))
             .child(options_row(
-                "Auto-encode on drop",
+                "ドロップ時自動エンコード",
                 div()
                     .id("opt-auto-encode")
                     .px_2()
@@ -941,9 +941,9 @@ impl Render for OptionsWindow {
                         view.settings.auto_encode_on_drop = !view.settings.auto_encode_on_drop;
                     }))
                     .child(if self.settings.auto_encode_on_drop {
-                        "ON"
+                        "オン"
                     } else {
-                        "OFF"
+                        "オフ"
                     }),
             ))
             .child(options_row(
@@ -963,10 +963,10 @@ impl Render for OptionsWindow {
                     .on_click(cx.listener(|view, _, _, _| {
                         view.settings.overwrite = !view.settings.overwrite;
                     }))
-                    .child(if self.settings.overwrite { "ON" } else { "OFF" }),
+                    .child(if self.settings.overwrite { "オン" } else { "オフ" }),
             ))
             // ===== 音声ビットレート =====
-            .child(options_section_label("Audio bitrate"))
+            .child(options_section_label("音声ビットレート"))
             // プリセット選択
             .child(
                 div()
@@ -993,7 +993,7 @@ impl Render for OptionsWindow {
             )
             // ステッパ (- 値 +)
             .child(options_row(
-                "Audio (kbps)",
+                "音声 (kbps)",
                 div()
                     .flex()
                     .flex_row()
@@ -1056,7 +1056,7 @@ impl Render for OptionsWindow {
                     ),
             ))
             // ===== 映像ビットレート =====
-            .child(options_section_label("Video bitrate"))
+            .child(options_section_label("映像ビットレート"))
             // プリセット選択
             .child(
                 div()
@@ -1083,7 +1083,7 @@ impl Render for OptionsWindow {
             )
             // ステッパ (- 値 +)
             .child(options_row(
-                "Video (kbps)",
+                "映像 (kbps)",
                 div()
                     .flex()
                     .flex_row()
@@ -1164,7 +1164,7 @@ impl Render for OptionsWindow {
                             .on_click(cx.listener(|_, _, w, _cx| {
                                 w.remove_window();
                             }))
-                            .child("Close"),
+                            .child("閉じる"),
                     )
                     .child(
                         div()
@@ -1178,10 +1178,10 @@ impl Render for OptionsWindow {
                             .on_click(cx.listener(|view, _, _, cx| {
                                 view.publish_recipe(cx);
                                 view.publish_settings(cx);
-                                view.status = "Saved".into();
+                                view.status = "保存しました".into();
                                 cx.notify();
                             }))
-                            .child("Save"),
+                            .child("保存"),
                     ),
             )
             .child(

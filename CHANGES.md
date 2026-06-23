@@ -16,6 +16,8 @@
   - @voluntas
 - [FIX] encode_tracks を部分成功対応に変更する (映像/音声を独立評価、片方失敗時に残りを保持)
   - @voluntas
+- [FIX] UI 文字列を全て日本語化する (技術用語例外を除く)
+  - @voluntas
 
 ### misc
 
