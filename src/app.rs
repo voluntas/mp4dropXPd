@@ -36,14 +36,14 @@ fn shared(cx: &App) -> std::sync::MutexGuard<'_, SharedState> {
 
 #[derive(Clone, Debug)]
 pub struct DropState {
-    pub recipe: EncodeRecipe,
-    pub dropped_paths: Vec<PathBuf>,
-    pub encoding: bool,
-    pub settings: AppSettings,
+    recipe: EncodeRecipe,
+    dropped_paths: Vec<PathBuf>,
+    encoding: bool,
+    settings: AppSettings,
     /// エンコード進捗 (0.0 - 1.0)
-    pub progress: f64,
+    progress: f64,
     /// エンコード開始時刻 (ETA 計算用)
-    pub encode_started: Option<Instant>,
+    encode_started: Option<Instant>,
 }
 
 impl DropState {
@@ -499,9 +499,9 @@ impl Render for DropWindow {
 // ===== MenuWindow (別ウィンドウ) =====
 
 pub struct MenuWindow {
-    pub recipe: EncodeRecipe,
-    pub settings: AppSettings,
-    pub can_encode: bool,
+    recipe: EncodeRecipe,
+    settings: AppSettings,
+    can_encode: bool,
     focus: FocusHandle,
 }
 
@@ -770,9 +770,9 @@ const AUDIO_BITRATE_MIN: u32 = 16;
 const AUDIO_BITRATE_MAX: u32 = 512;
 
 pub struct OptionsWindow {
-    pub recipe: EncodeRecipe,
-    pub settings: AppSettings,
-    pub status: SharedString,
+    recipe: EncodeRecipe,
+    settings: AppSettings,
+    status: SharedString,
     focus: FocusHandle,
 }
 

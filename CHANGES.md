@@ -41,6 +41,8 @@
   - @voluntas
 - [UPDATE] window_remove ヘルパーを削除し MenuWindow に多重起動防止を追加する
   - @voluntas
+- [UPDATE] DropState / MenuWindow / OptionsWindow の pub フィールドを private 化する
+  - @voluntas
 
 ### 追加
 
