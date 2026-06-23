@@ -31,6 +31,9 @@
 
 ### misc
 
+- [UPDATE] AppSettings のデッドフィールドと DropState::status/idle_hint を削除する
+  - @voluntas
+
 ### 追加
 
 - [ADD] CHANGES.md を作成し変更履歴の記録基盤を整備する

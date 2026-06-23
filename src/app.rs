@@ -39,7 +39,6 @@ fn shared(cx: &App) -> std::sync::MutexGuard<'_, SharedState> {
 pub struct DropState {
     pub recipe: EncodeRecipe,
     pub dropped_paths: Vec<PathBuf>,
-    pub status: SharedString,
     pub encoding: bool,
     pub settings: AppSettings,
     /// エンコード進捗 (0.0 - 1.0)
@@ -53,27 +52,10 @@ impl DropState {
         Self {
             recipe: EncodeRecipe::default(),
             dropped_paths: Vec::new(),
-            status: "MP4 をドロップ · 右クリックで設定".into(),
             encoding: false,
             settings: AppSettings::default(),
             progress: 0.0,
             encode_started: None,
-        }
-    }
-
-    fn idle_hint(&mut self) {
-        if self.encoding {
-            return;
-        }
-        if self.dropped_paths.is_empty() {
-            self.status = "MP4 をドロップ · 右クリックで設定".into();
-        } else {
-            self.status = format!(
-                "{} ファイル · {} · 右クリック → エンコード",
-                self.dropped_paths.len(),
-                self.recipe.summary()
-            )
-            .into();
         }
     }
 
@@ -83,11 +65,6 @@ impl DropState {
             if !self.dropped_paths.contains(&p) {
                 self.dropped_paths.push(p);
             }
-        }
-        if self.dropped_paths.is_empty() {
-            self.status = "MP4 のみ".into();
-        } else {
-            self.idle_hint();
         }
     }
 }
@@ -114,7 +91,6 @@ impl DropWindow {
         let mut s = shared(cx);
         if let Some(r) = s.latest_recipe.take() {
             self.state.recipe = r;
-            self.state.idle_hint();
         }
         if let Some(s2) = s.latest_settings.take() {
             self.state.settings = s2;
@@ -136,7 +112,6 @@ impl DropWindow {
         if s.pending_clear {
             s.pending_clear = false;
             self.state.dropped_paths.clear();
-            self.state.idle_hint();
         }
         if s.pending_exit {
             s.pending_exit = false;
@@ -163,7 +138,6 @@ impl DropWindow {
         self.state.encoding = true;
         self.state.progress = 0.0;
         self.state.encode_started = Some(Instant::now());
-        self.state.status = format!("エンコード中 {}…", self.state.dropped_paths.len()).into();
 
         let mut recipe = self.state.recipe;
         recipe.video_bitrate_kbps = self.state.settings.video_bitrate_kbps;
@@ -214,7 +188,7 @@ impl DropWindow {
                 }
             }
 
-            let summary = match encode_task.await {
+            let _summary = match encode_task.await {
                 Ok(rows) => {
                     let ok = rows.iter().filter(|(_, r)| r.is_ok()).count();
                     let err = rows.len().saturating_sub(ok);
@@ -236,7 +210,6 @@ impl DropWindow {
                 view.state.encoding = false;
                 view.state.progress = 1.0;
                 view.state.encode_started = None;
-                view.state.status = summary.into();
                 view.encode_task = None;
                 if auto_clear {
                     view.state.dropped_paths.clear();
@@ -348,7 +321,6 @@ impl Render for DropWindow {
 
         let recipe_summary = self.state.recipe.summary();
         let file_count = self.state.dropped_paths.len();
-        let _status = self.state.status.clone();
         let encoding = self.state.encoding;
         let progress = self.state.progress;
         // エンコード中の ETA 表示文字列を構築する
