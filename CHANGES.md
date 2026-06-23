@@ -10,6 +10,8 @@
   - @voluntas
 - [FIX] drain_vt_encoder の永久 busy-wait を 30 秒タイムアウトに変換する
   - @voluntas
+- [FIX] AV1 (dav1d) デコードのエラー握り潰しと最終フレームドレイン漏れを修正する
+  - @voluntas
 
 ### misc
 

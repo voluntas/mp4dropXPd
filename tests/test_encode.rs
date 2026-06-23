@@ -85,3 +85,30 @@ async fn valid_mp4_transcodes_successfully() {
 
     assert!(result.is_ok(), "valid MP4 should transcode successfully, got: {result:?}");
 }
+
+/// 正常な AV1 MP4 (libsvtav1 + Opus) のトランスコードが成功することを確認する smoke test
+#[tokio::test]
+async fn valid_av1_mp4_transcodes_successfully() {
+    let input = Path::new("tests/fixtures/valid_av1_opus.mp4");
+    let output = Path::new("/tmp/test_output_valid_av1.mp4");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, progress).await;
+
+    assert!(result.is_ok(), "valid AV1 MP4 should transcode successfully, got: {result:?}");
+}
+
+/// 途中で切断された AV1 MP4 を投入してもパニックせず Err を返す
+#[tokio::test]
+async fn truncated_av1_mp4_does_not_panic() {
+    let input = Path::new("tests/fixtures/truncated_av1_opus.mp4");
+    let output = Path::new("/tmp/test_output_truncated_av1.mp4");
+    let recipe = EncodeRecipe::default();
+    let progress = Arc::new(JobProgress::new());
+
+    let result = encode_file_async(input, output, recipe, progress).await;
+
+    // パニックせずに Err が返れば OK（demux エラーまたはデコードエラーのいずれか）
+    assert!(result.is_err(), "truncated AV1 MP4 should return Err, got: {result:?}");
+}

@@ -332,9 +332,11 @@ fn decode_video_frames(
                 decoder
                     .decode(&raw.data)
                     .map_err(|e| Error::Message(format!("dav1d decode error: {e}")))?;
-                while let Ok(Some(frame)) = decoder
+                // `?` で Err を呼び出し元へ即時伝播する。
+                // 破損 dav1d デコーダで後続サンプルを処理し続けるリスクを排除するため。
+                while let Some(frame) = decoder
                     .next_frame()
-                    .map_err(|e| Error::Message(format!("dav1d next_frame error: {e}")))
+                    .map_err(|e| Error::Message(format!("dav1d next_frame error: {e}")))?
                 {
                     if frame.bit_depth() != 8 {
                         return Err(Error::Message(
@@ -348,6 +350,29 @@ fn decode_video_frames(
                     on_frame(&y, &u, &v)?;
                 }
             }
+            // 全サンプル処理後、dav1d 内部バッファに残った遅延フレームを
+            // `next_frame()` を `Ok(None)` まで反復呼び出ししてドレインする。
+            // `Decoder::flush()` は内部状態リセット + バッファ破棄 API のため使用不可。
+            // `Decoder::finish()` は no-op。
+            // AudioToolbox デコードパターン (transcode.rs:716-724) を踏襲。
+            let mut drained = 0usize;
+            while let Some(frame) = decoder
+                .next_frame()
+                .map_err(|e| Error::Message(format!("dav1d drain error: {e}")))?
+            {
+                if frame.bit_depth() != 8 {
+                    return Err(Error::Message(
+                        "AV1 デコード結果が 8-bit ではありません (現状は 8-bit I420 のみ対応)"
+                            .into(),
+                    ));
+                }
+                let y = copy_stride(frame.y_plane(), frame.y_stride(), w, h);
+                let u = copy_stride(frame.u_plane(), frame.u_stride(), w / 2, h / 2);
+                let v = copy_stride(frame.v_plane(), frame.v_stride(), w / 2, h / 2);
+                on_frame(&y, &u, &v)?;
+                drained += 1;
+            }
+            tracing::debug!("dav1d drain complete: {} delayed frames", drained);
             Ok(())
         }
         _ => Err(Error::Message("未対応の映像コーデックです".into())),
