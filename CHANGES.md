@@ -34,6 +34,8 @@
   - @voluntas
 - [UPDATE] encode_video_vt 共通関数を抽出し H.264/H.265 の重複を削減する
   - @voluntas
+- [UPDATE] app.rs (1208 行) と transcode.rs (1340 行) を機能別モジュールに分割する
+  - @voluntas
 - [UPDATE] 進捗ポーリングを完全イベント駆動に変更し 100ms 固定待機を除去する
   - @voluntas
 - [FIX] 入力音声サンプルの composition_time_offset が mux 時に破棄される問題を修正する
