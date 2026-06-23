@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -48,5 +46,5 @@ progress.set_total(video_samples.len() as u64);
 - **0007 で整備される基盤**: `tests/test_encode.rs` への音声のみ MP4 smoke test 追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
 - **0032/0046 との関係**: `tracing` 関連の追加なし。0032 (`add-tracing-logging`) / 0046 (`refactor-remove-tracing-init`) の判断に影響しない。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
-- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] 音声のみ MP4 で進捗バーが 0% 固定` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
