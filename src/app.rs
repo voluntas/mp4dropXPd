@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -17,14 +18,19 @@ use crate::encode::{self, EncodeJob, JobProgress, default_output_path};
 use crate::input::filter_mp4_paths;
 use crate::settings::AppSettings;
 
+/// 別ウィンドウから DropWindow へのコマンド
+enum AppCommand {
+    OpenOptions,
+    TriggerEncode,
+    Clear,
+    Exit,
+    UpdateRecipe(EncodeRecipe),
+    UpdateSettings(AppSettings),
+}
+
 #[derive(Default)]
 struct SharedState {
-    pending_open_options: bool,
-    pending_encode: bool,
-    pending_clear: bool,
-    pending_exit: bool,
-    latest_recipe: Option<EncodeRecipe>,
-    latest_settings: Option<AppSettings>,
+    commands: VecDeque<AppCommand>,
 }
 
 struct SharedGlobal(Mutex<SharedState>);
@@ -88,39 +94,38 @@ impl DropWindow {
 
     fn poll_shared(&mut self, cx: &mut Context<Self>) {
         let mut s = shared(cx);
-        if let Some(r) = s.latest_recipe.take() {
-            self.state.recipe = r;
-        }
-        if let Some(s2) = s.latest_settings.take() {
-            self.state.settings = s2;
-        }
-        if s.pending_open_options {
-            s.pending_open_options = false;
-            drop(s);
-            self.open_options(cx);
-            cx.notify();
-            return;
-        }
-        if s.pending_encode {
-            s.pending_encode = false;
-            drop(s);
-            self.schedule_encode(cx);
-            cx.notify();
-            return;
-        }
-        if s.pending_clear {
-            s.pending_clear = false;
-            self.state.dropped_paths.clear();
-        }
-        if s.pending_exit {
-            s.pending_exit = false;
-            drop(s);
-            // 進行中のエンコードタスクを abort してから quit する
-            if let Some(task) = self.encode_task.take() {
-                task.detach();
+        while let Some(cmd) = s.commands.pop_front() {
+            match cmd {
+                AppCommand::UpdateRecipe(r) => {
+                    self.state.recipe = r;
+                }
+                AppCommand::UpdateSettings(s2) => {
+                    self.state.settings = s2;
+                }
+                AppCommand::OpenOptions => {
+                    drop(s);
+                    self.open_options(cx);
+                    cx.notify();
+                    return;
+                }
+                AppCommand::TriggerEncode => {
+                    drop(s);
+                    self.schedule_encode(cx);
+                    cx.notify();
+                    return;
+                }
+                AppCommand::Clear => {
+                    self.state.dropped_paths.clear();
+                }
+                AppCommand::Exit => {
+                    drop(s);
+                    if let Some(task) = self.encode_task.take() {
+                        task.detach();
+                    }
+                    cx.quit();
+                    return;
+                }
             }
-            cx.quit();
-            return;
         }
         drop(s);
     }
@@ -541,12 +546,12 @@ impl MenuWindow {
 
     fn publish_recipe(&self, cx: &mut App) {
         let mut s = shared(cx);
-        s.latest_recipe = Some(self.recipe);
+        s.commands.push_back(AppCommand::UpdateRecipe(self.recipe));
     }
 
     fn publish_settings(&self, cx: &mut App) {
         let mut s = shared(cx);
-        s.latest_settings = Some(self.settings.clone());
+        s.commands.push_back(AppCommand::UpdateSettings(self.settings.clone()));
     }
 
     fn request(&self, cx: &mut App, f: impl FnOnce(&mut SharedState)) {
@@ -586,7 +591,7 @@ impl Render for MenuWindow {
                     .hover(|s| s.bg(rgb(0x404040)))
                     .cursor_pointer()
                     .on_click(cx.listener(|view, _ev, _w, cx| {
-                        view.request(cx, |s| s.pending_open_options = true);
+                        view.request(cx, |s| s.commands.push_back(AppCommand::OpenOptions));
                         _w.remove_window();
                     }))
                     .child("オプション…"),
@@ -706,7 +711,7 @@ impl Render for MenuWindow {
                         .hover(|s| s.bg(rgb(0x404040)))
                         .cursor_pointer()
                         .on_click(cx.listener(|view, _ev, _w, cx| {
-                            view.request(cx, |s| s.pending_encode = true);
+                            view.request(cx, |s| s.commands.push_back(AppCommand::TriggerEncode));
                             _w.remove_window();
                         }));
                 } else {
@@ -724,7 +729,7 @@ impl Render for MenuWindow {
                     .hover(|s| s.bg(rgb(0x404040)))
                     .cursor_pointer()
                     .on_click(cx.listener(|view, _ev, _w, cx| {
-                        view.request(cx, |s| s.pending_clear = true);
+                        view.request(cx, |s| s.commands.push_back(AppCommand::Clear));
                         _w.remove_window();
                     }))
                     .child("クリア"),
@@ -740,7 +745,7 @@ impl Render for MenuWindow {
                     .hover(|s| s.bg(rgb(0x404040)))
                     .cursor_pointer()
                     .on_click(cx.listener(|view, _ev, _w, cx| {
-                        view.request(cx, |s| s.pending_exit = true);
+                        view.request(cx, |s| s.commands.push_back(AppCommand::Exit));
                         _w.remove_window();
                     }))
                     .child("終了"),
@@ -813,13 +818,13 @@ impl OptionsWindow {
     /// 現在の recipe をメインウィンドウへ反映させる
     fn publish_recipe(&self, cx: &mut App) {
         let mut s = shared(cx);
-        s.latest_recipe = Some(self.recipe);
+        s.commands.push_back(AppCommand::UpdateRecipe(self.recipe));
     }
 
     /// 現在の settings をメインウィンドウへ反映させる
     fn publish_settings(&self, cx: &mut App) {
         let mut s = shared(cx);
-        s.latest_settings = Some(self.settings.clone());
+        s.commands.push_back(AppCommand::UpdateSettings(self.settings.clone()));
     }
 }
 

@@ -30,6 +30,8 @@
   - @voluntas
 - [UPDATE] 構造化エラー型を追加し主要な Error::Message 箇所を置換する (InvalidSampleRange / DrainTimeout / NoTrack / TrackEncode / Demux)
   - @voluntas
+- [UPDATE] pending_* フラグ 4 種を AppCommand enum + VecDeque に置換する
+  - @voluntas
 - [FIX] 入力音声サンプルの composition_time_offset が mux 時に破棄される問題を修正する
   - @voluntas
 - [FIX] f64 ソートを整数ソートに置き換え長時間動画の順序破壊を防止する
