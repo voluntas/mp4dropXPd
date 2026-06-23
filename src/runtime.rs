@@ -4,8 +4,11 @@ static RUNTIME: OnceLock<tokio::runtime::Runtime> = OnceLock::new();
 
 fn runtime() -> &'static tokio::runtime::Runtime {
     RUNTIME.get_or_init(|| {
+        let threads = std::thread::available_parallelism()
+            .map(|n| n.get())
+            .unwrap_or(1);
         tokio::runtime::Builder::new_multi_thread()
-            .worker_threads(4)
+            .worker_threads(threads)
             .enable_all()
             .build()
             .expect("failed to build tokio runtime")

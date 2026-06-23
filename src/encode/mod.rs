@@ -24,6 +24,7 @@ pub use output::default_output_path;
 pub struct JobProgress {
     processed: AtomicU64,
     total: AtomicU64,
+    notify: Arc<tokio::sync::Notify>,
 }
 
 impl Default for JobProgress {
@@ -37,17 +38,25 @@ impl JobProgress {
         Self {
             processed: AtomicU64::new(0),
             total: AtomicU64::new(0),
+            notify: Arc::new(tokio::sync::Notify::new()),
         }
+    }
+
+    /// 通知ハンドルを返す (UI 側のイベント駆動待機用)
+    pub fn notify_handle(&self) -> Arc<tokio::sync::Notify> {
+        self.notify.clone()
     }
 
     /// 総フレーム数をセットする (demux 完了後など)
     pub fn set_total(&self, total: u64) {
         self.total.store(total, Ordering::Relaxed);
+        self.notify.notify_one();
     }
 
     /// 処理済みフレーム数を加算する
     pub fn add_processed(&self, count: u64) {
         self.processed.fetch_add(count, Ordering::Relaxed);
+        self.notify.notify_one();
     }
 
     /// 進捗割合 (0.0 - 1.0) を返す

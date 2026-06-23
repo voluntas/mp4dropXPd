@@ -167,11 +167,26 @@ impl DropWindow {
                 }
             });
 
-            // 進捗をポーリングしながらエンコード完了を待つ
+            // 各ジョブの進捗通知ハンドルを収集する
+            let notifies: Vec<Arc<tokio::sync::Notify>> = progresses_for_poll
+                .iter()
+                .map(|p| p.notify_handle())
+                .collect();
+
+            // 進捗をイベント駆動で待機しながらエンコード完了を待つ
             loop {
-                cx.background_executor()
-                    .timer(std::time::Duration::from_millis(100))
-                    .await;
+                // 先頭の notify を待つ (いずれかのジョブで進捗があれば即座に UI 更新)
+                // 100ms のタイムアウトをフォールバックとして残す
+                if let Some(n) = notifies.first() {
+                    tokio::select! {
+                        _ = n.notified() => {}
+                        _ = cx.background_executor().timer(std::time::Duration::from_millis(100)) => {}
+                    }
+                } else {
+                    cx.background_executor()
+                        .timer(std::time::Duration::from_millis(100))
+                        .await;
+                }
                 let total: f64 =
                     progresses_for_poll.iter().map(|p| p.ratio()).sum::<f64>() / job_count as f64;
                 let _ = this.update(cx, |view, cx| {
