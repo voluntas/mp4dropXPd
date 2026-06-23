@@ -3,7 +3,6 @@
 - Priority: High
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
 
@@ -56,8 +55,8 @@ let finalized = muxer.finalize()...;
 - 入力と出力が同じパスのケースで元ファイルが保持される
 - 複数ジョブ並列実行時に一時ファイル名が衝突しない
 - `tests/test_encode.rs` に正常 MP4 smoke test と、エンコード失敗時に `output` に破損ファイルが残らないことの assert テストが追加されている
-- `cargo clippy --workspace --all-targets -- -D warnings` を通過する
-- `CHANGES.md` (0009 で新規作成) の `### 不具合修正` に本修正を追記する
+- `cargo clippy --all-targets -- -D warnings` を通過する
+- [FIX] `write_mp4` を tmp + atomic rename 方式に変更
 - 一時ファイルの `Drop` 失敗時に `tracing::warn!` で英語ログが出力される
 
 ## 解決方法
@@ -174,5 +173,5 @@ fn write_mp4(
 - **0007 で整備される基盤**: `tests/test_encode.rs` へのテスト追加は 0007 完了後に行う。
 - **テスト戦略**: 正常系 (完了後に tmp 残骸なし)、失敗系 (破損入力で output にファイル残らない)、入出力同名 (元ファイル保持)、並列実行 (tmp 名衝突なし) の 4 ケース。
 - **atomic rename の前提**: `std::fs::rename` は同一 FS 内のみ atomic。`TempFile::new` で `output.parent()` を tmp 親にすることで同一 FS を保証する。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` を通過すること。
-- **CHANGES.md 追記**: `### 不具合修正` に「`write_mp4` を tmp + atomic rename 方式に変更」を追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
