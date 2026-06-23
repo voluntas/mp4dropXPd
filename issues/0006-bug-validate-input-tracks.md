@@ -3,10 +3,8 @@
 - Priority: High
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -40,8 +38,8 @@ let audio_idx = tracks.iter().position(|t| t.kind == TrackKind::Audio);
 - 映像/音声トラックのうち少なくとも一方が存在する MP4 では、引き続き正常処理される
 - 0005 (`bug-encode-tracks-partial-success`) との整合性: 0005 case 1 (両方が `Ok(None)`) は「トラック種別は存在するがサンプルが 0 件」のケースを意味し、**「トラック自体が存在しない」ケース (本 issue の Err 対象) とは別**。0005 着手時に case 1 の説明に「トラックは存在するがサンプルなし」の注釈を追記する
 - `tests/test_encode.rs` に字幕/データのみの MP4 を入力とするテストが追加されている
-- `cargo clippy --workspace --all-targets -- -D warnings` (`prek.toml:28`) を通過する
-- `### 不具合修正` 等に本修正が追記されている (`shiguredo-changelog` 規約)
+- `cargo clippy --all-targets -- -D warnings` (`prek.toml:28`) を通過する
+- [FIX] 映像/音声トラックを含まない MP4 入力時の破損ファイル生成を防止 (早期 `Err` return)
 - 失敗時に `tracing::warn!` で英語ログが出力される (AGENTS.md「ログメッセージは全て英語にすること」準拠)
 
 ## 解決方法
@@ -64,5 +62,5 @@ if video_idx.is_none() && audio_idx.is_none() {
 - **0007 で整備される基盤**: `tests/test_encode.rs` へのテスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
 - **テストフィクスチャ**: 字幕のみの MP4 フィクスチャは 0007 で整備される fixtures ディレクトリに配置する。`ffmpeg` で生成可能。
 - **0018 との関係**: 本 issue で追加する `Error::Message` 1 箇所は 0018 の refactor 対象に含まれる。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` を通過すること。
-- **CHANGES.md 追記**: `### 不具合修正` に「映像/音声トラックを含まない MP4 入力時の破損ファイル生成を防止 (早期 `Err` return)」を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
