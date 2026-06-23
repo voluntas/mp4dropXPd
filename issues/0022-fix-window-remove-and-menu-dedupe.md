@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -58,5 +56,5 @@ fn window_remove(cx: &mut Context<MenuWindow>) {
 - **0044 との関係**: 0044 (`refactor-remove-window-remove-helper`) は本 issue の (1) 部分 (`window_remove` ヘルパー削除) と同じ。0044 は本 issue と重複。**0044 は本 issue に統合** して 0044 を close する (もしくは本 issue を 0044 に集約)。
 - **0007 で整備される基盤**: `tests/test_app.rs` へのメニュー多重起動防止のテスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
-- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] window_remove ヘルパーと pending_close_menu フラグを削除、メニュー多重起動防止チェックを追加` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
