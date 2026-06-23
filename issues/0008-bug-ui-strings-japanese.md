@@ -3,10 +3,8 @@
 - Priority: High
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -88,8 +86,8 @@ UI 文字列を全て日本語化する。リソースファイル (`i18n` 等) 
 - 0010 / 0041 / 0049 の `overwrite` 関連 UI は本 issue のスコープ外
 - 機械的検査: `rg '"[A-Z][a-z]+ [a-z]' src/app.rs src/codec.rs` で英語 UI 文字列の残存が技術用語例外のみになることを確認するワンライナーを `prek.toml` に追加 (または `CONTRIBUTING.md` に記載)
 - `tests/test_codec.rs` で `AudioCodec::label()` / `VideoCodec::label()` の戻り値が技術用語例外 (`"AAC"`, `"Opus"`, `"H.264"`, `"H.265"`, `"AV1"`) と一致することを assert する単体テストが追加されている
-- `cargo clippy --workspace --all-targets -- -D warnings` (`prek.toml:28`) を通過する
-- `### 不具合修正` 等に本修正が追記されている (`shiguredo-changelog` 規約)
+- `cargo clippy --all-targets -- -D warnings` (`prek.toml:28`) を通過する
+- [FIX] UI 文字列を全て日本語化 (技術用語例外を除く)
 
 ## 解決方法
 
@@ -135,5 +133,5 @@ rg '"[A-Z][a-z]+( [a-z]+)+"' src/app.rs src/codec.rs
 - **0038 との関係**: `README.md:19-25` の機能リストも英語のまま。0038 (`doc-clarify-ui-roles`) で README 更新時に日本語化する想定。**0008 では `src/app.rs` と `src/codec.rs` のみ扱う**。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない (`src/app.rs:226` は 0017 移管のため)。0018 への影響なし。
 - **0007 で整備される基盤**: `tests/test_codec.rs` への単体テスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認 (`prek.toml:28` の hook がコミット時に同じチェックを行う)。
-- **CHANGES.md 追記**: `### 不具合修正` セクション (もしくは 0009 で定義される規約に従う) に「UI 文字列を全て日本語化 (技術用語例外を除く)」を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
