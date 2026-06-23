@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -54,5 +52,5 @@ struct SharedState {
 - **0011 との関係**: 0011 (`bug-pending-exit-abort`) は `pending_exit` フラグに abort 機構を追加する。0020 で `pending_exit` フラグが `AppCommand::Exit` に変わるため、**0011 → 0020 の順** でコミットするか、**0011 と 0020 を統合** して 1 コミットにする。0011 を 0020 完了後に re-polish する必要あり。
 - **0007 で整備される基盤**: `tests/test_app.rs` への enum パターンのテスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない。0018 への影響なし。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
-- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[REFACTOR] pending_* フラグ 5 種を AppCommand enum に置換` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
