@@ -3,10 +3,8 @@
 - Priority: Medium
 - Created: 2026-06-22
 - Completed:
-- Model: opencode-go/minimax-m3
 - Branch: (CODEBASE.md によりブランチ不要 — develop に直接コミット)
 - Polished: 2026-06-23
-- Reporter:
 
 ## 目的
 
@@ -65,5 +63,5 @@ Err(e) => {
 - **0007 で整備される基盤**: `tests/test_app.rs` (UI テスト) への panic / 通常エラー時の UI 表示テスト追加は、0007 が `tests/` の Cargo 設定を済ませてから行う。
 - **0018 との関係**: 本 issue は `Error::Message` を追加しない (`tracing::error!` でログにバックトレースを残すのみ)。0018 への影響なし。
 - **0032/0046 との関係**: `tracing::error!` の出力先確保は 0032 (`add-tracing-logging`) / 0046 (`refactor-remove-tracing-init`) の判断に従う。0032 が完了するまではログ出力は無視される可能性があるが、本 issue のスコープではログ呼び出しを入れるだけで完結する。
-- **clippy 通過**: `cargo clippy --workspace --all-targets -- -D warnings` がローカルで 0 warning で完了することを確認。
-- **CHANGES.md 追記**: `### 不具合修正` サブセクション (0009 で確立) に `[FIX] panic 時の JoinError を UI に直接出さず、簡潔な文言に置換 (詳細はログに記録)` を 1 行で追記する。
+- **clippy 通過**: 完了条件の clippy 要件をローカルで確認すること。
+- **CHANGES.md 追記**: 完了条件の CHANGES.md 追記文言を参照。
