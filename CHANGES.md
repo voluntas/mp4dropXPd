@@ -20,6 +20,8 @@
   - @voluntas
 - [FIX] AppSettings::overwrite 設定をエンコード経路に配線する
   - @voluntas
+- [FIX] エンコード中の quit で detach タスクが走り続ける問題を修正する (Task を保持し abort 可能に)
+  - @voluntas
 
 ### misc
 

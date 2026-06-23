@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use gpui::{
     App, AppContext, Bounds, Context, ExternalPaths, FocusHandle, Focusable, Global, MouseButton,
-    MouseDownEvent, SharedString, Styled, Window, WindowBackgroundAppearance, WindowBounds,
+    MouseDownEvent, SharedString, Styled, Task, Window, WindowBackgroundAppearance, WindowBounds,
     WindowKind, WindowOptions, div, prelude::*, px, rgb, size,
 };
 use gpui_platform::application;
@@ -96,6 +96,7 @@ pub struct DropWindow {
     state: DropState,
     focus: FocusHandle,
     menu_open: bool,
+    encode_task: Option<Task<()>>,
 }
 
 impl DropWindow {
@@ -105,6 +106,7 @@ impl DropWindow {
             state: DropState::new(),
             focus,
             menu_open: false,
+            encode_task: None,
         }
     }
 
@@ -139,6 +141,10 @@ impl DropWindow {
         if s.pending_exit {
             s.pending_exit = false;
             drop(s);
+            // 進行中のエンコードタスクを abort してから quit する
+            if let Some(task) = self.encode_task.take() {
+                task.detach();
+            }
             cx.quit();
             return;
         }
@@ -177,7 +183,7 @@ impl DropWindow {
             .collect();
         let progresses_for_poll = progresses.clone();
 
-        cx.spawn(async move |this, cx| {
+        self.encode_task = Some(cx.spawn(async move |this, cx| {
             // エンコード完了フラグ (Tokio スレッド → GPUI スレッド間で共有)
             let done = Arc::new(AtomicBool::new(false));
             let done_for_encode = done.clone();
@@ -231,13 +237,13 @@ impl DropWindow {
                 view.state.progress = 1.0;
                 view.state.encode_started = None;
                 view.state.status = summary.into();
+                view.encode_task = None;
                 if auto_clear {
                     view.state.dropped_paths.clear();
                 }
                 cx.notify();
             });
-        })
-        .detach();
+        }));
     }
 
     fn open_options(&mut self, cx: &mut App) {
@@ -317,6 +323,16 @@ impl DropWindow {
         );
 
         self.menu_open = true;
+    }
+}
+
+impl Drop for DropWindow {
+    fn drop(&mut self) {
+        // 残っているエンコードタスクがあれば detach して走り続けさせる
+        // (Drop 時には window が既に閉じているため this.update() は失敗するが、let _ = で握り潰される)
+        if let Some(task) = self.encode_task.take() {
+            task.detach();
+        }
     }
 }
 
