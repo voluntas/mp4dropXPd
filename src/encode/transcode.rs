@@ -1207,40 +1207,71 @@ fn write_mp4(
     let audio_timescale = audio.as_ref().and_then(|a| NonZeroU32::new(a.sample_rate));
 
     // 時系列順にマージするためのイベントリスト
-    let mut events: Vec<(f64, OutputKind)> = Vec::new();
+    // f64 の精度限界を避けるため、整数キー (timestamp / timescale) の比較でソートする
+    struct MergeEvent {
+        timestamp: u64,
+        timescale: NonZeroU32,
+        kind: OutputKind,
+    }
+
+    impl Ord for MergeEvent {
+        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+            // 有理数比較: self.timestamp / self.timescale vs other.timestamp / other.timescale
+            // クロス乗算で整数演算のみで比較する
+            let a = self.timestamp as u128 * other.timescale.get() as u128;
+            let b = other.timestamp as u128 * self.timescale.get() as u128;
+            a.cmp(&b)
+        }
+    }
+
+    impl PartialOrd for MergeEvent {
+        fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+            Some(self.cmp(other))
+        }
+    }
+
+    impl PartialEq for MergeEvent {
+        fn eq(&self, other: &Self) -> bool {
+            self.cmp(other) == std::cmp::Ordering::Equal
+        }
+    }
+
+    impl Eq for MergeEvent {}
+
+    let mut events: Vec<MergeEvent> = Vec::new();
 
     if let Some(v) = &video {
         let ts = video_timescale.expect("video timescale");
         for s in &v.samples {
-            let secs = s.timestamp as f64 / ts.get() as f64;
-            events.push((
-                secs,
-                OutputKind::Video(EncodedVideoSample {
+            events.push(MergeEvent {
+                timestamp: s.timestamp,
+                timescale: ts,
+                kind: OutputKind::Video(EncodedVideoSample {
                     data: s.data.clone(),
                     keyframe: s.keyframe,
                     timestamp: s.timestamp,
                     duration: s.duration,
                     composition_time_offset: s.composition_time_offset,
                 }),
-            ));
+            });
         }
     }
     if let Some(a) = &audio {
         let ts = audio_timescale.expect("audio timescale");
         for s in &a.samples {
-            let secs = s.timestamp as f64 / ts.get() as f64;
-            events.push((
-                secs,
-                OutputKind::Audio(EncodedAudioSample {
+            events.push(MergeEvent {
+                timestamp: s.timestamp,
+                timescale: ts,
+                kind: OutputKind::Audio(EncodedAudioSample {
                     data: s.data.clone(),
                     timestamp: s.timestamp,
                     duration: s.duration,
                     composition_time_offset: s.composition_time_offset,
                 }),
-            ));
+            });
         }
     }
-    events.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
+    events.sort();
 
     let video_entry = video.as_ref().map(|v| v.sample_entry.clone());
     let audio_entry = audio.as_ref().map(|a| a.sample_entry.clone());
@@ -1251,8 +1282,8 @@ fn write_mp4(
     let mut audio_entry_sent = false;
     let mut position = initial_bytes.len() as u64;
 
-    for (_, kind) in events {
-        match kind {
+    for event in events {
+        match event.kind {
             OutputKind::Video(s) => {
                 file.write_all(&s.data)?;
                 let data_size = s.data.len();

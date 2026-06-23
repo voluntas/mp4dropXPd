@@ -28,6 +28,8 @@
   - @voluntas
 - [FIX] 入力音声サンプルの composition_time_offset が mux 時に破棄される問題を修正する
   - @voluntas
+- [FIX] f64 ソートを整数ソートに置き換え長時間動画の順序破壊を防止する
+  - @voluntas
 
 ### misc
 
